@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PharmacistActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">PharmacistActivity.java</span></div><h1>PharmacistActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L24">public class PharmacistActivity extends BaseActivity {</span>
+
+    private static final String BASE_API = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev&quot;;
+    private static final String URL_ALL_ORDERS = BASE_API + &quot;/api/pharmacy/orders/all&quot;;
+    private static final String URL_STATUS_BASE = BASE_API + &quot;/api/pharmacy/orders/&quot;;
+
+<span class="nc" id="L30">    private final ArrayList&lt;OrderRow&gt; orders = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L31">    private final ArrayList&lt;String&gt; rows = new ArrayList&lt;&gt;();</span>
+    private ArrayAdapter&lt;String&gt; adapter;
+
+    @Override
+    protected boolean requiresAuth() {
+<span class="nc" id="L36">        return true;</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L41">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L42">        setContentView(R.layout.activity_pharmacist);</span>
+<span class="nc" id="L43">        setupBottomNav(0);</span>
+
+<span class="nc" id="L45">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (bottomNav != null) {</span>
+<span class="nc" id="L47">            ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L48">                int left = view.getPaddingLeft();</span>
+<span class="nc" id="L49">                int top = view.getPaddingTop();</span>
+<span class="nc" id="L50">                int right = view.getPaddingRight();</span>
+<span class="nc" id="L51">                view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L52">                return insets;</span>
+            });
+        }
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (!AuthManager.isPharmacist(getApplicationContext())) {</span>
+<span class="nc" id="L57">            Toast.makeText(getApplicationContext(),</span>
+<span class="nc" id="L58">                    &quot;Pharmacist access only.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L59">            finish();</span>
+<span class="nc" id="L60">            return;</span>
+        }
+
+<span class="nc" id="L63">        ListView list = findViewById(R.id.order_list);</span>
+<span class="nc" id="L64">        adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, rows);</span>
+<span class="nc" id="L65">        list.setAdapter(adapter);</span>
+
+<span class="nc" id="L67">        list.setOnItemClickListener((parent, view, position, id) -&gt; {</span>
+<span class="nc bnc" id="L68" title="All 4 branches missed.">            if (position &lt; 0 || position &gt;= orders.size()) return;</span>
+<span class="nc" id="L69">            OrderRow o = orders.get(position);</span>
+<span class="nc" id="L70">            showOrderActions(o);</span>
+<span class="nc" id="L71">        });</span>
+
+<span class="nc" id="L73">        fetchOrders();</span>
+<span class="nc" id="L74">    }</span>
+
+    private void fetchOrders() {
+<span class="nc" id="L77">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                URL_ALL_ORDERS,
+                null,
+                this::handleOrdersResponse,
+<span class="nc" id="L82">                (VolleyError err) -&gt; handleVolleyAuthError(err, this::fetchOrders)</span>
+<span class="nc" id="L83">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L86">                return buildAuthHeaders();</span>
+            }
+        };
+
+<span class="nc" id="L90">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L91">    }</span>
+
+    private void handleOrdersResponse(JSONArray resp) {
+<span class="nc" id="L94">        orders.clear();</span>
+<span class="nc" id="L95">        rows.clear();</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L98">            JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (o == null) continue;</span>
+
+<span class="nc" id="L101">            long id = o.optLong(&quot;id&quot;, -1);</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (id &lt;= 0) continue;</span>
+
+<span class="nc" id="L104">            String patient = o.optString(&quot;patientName&quot;, &quot;Patient&quot;);</span>
+<span class="nc" id="L105">            String status = o.optString(&quot;status&quot;, &quot;PENDING&quot;);</span>
+<span class="nc" id="L106">            String drug = o.optString(&quot;productName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L107">            int quantity = o.optInt(&quot;quantity&quot;, 0);</span>
+<span class="nc" id="L108">            String date = o.optString(&quot;createdAt&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L110">            OrderRow or = new OrderRow();</span>
+<span class="nc" id="L111">            or.id = id;</span>
+<span class="nc" id="L112">            or.patientName = patient;</span>
+<span class="nc" id="L113">            or.status = status;</span>
+<span class="nc" id="L114">            or.drug = drug;</span>
+<span class="nc" id="L115">            or.quantity = quantity;</span>
+<span class="nc" id="L116">            or.date = date;</span>
+<span class="nc" id="L117">            orders.add(or);</span>
+
+<span class="nc" id="L119">            String row = &quot;#&quot; + id + &quot; • &quot; + patient + &quot; • &quot; + date + &quot;\n&quot;</span>
+                    + &quot;Status: &quot; + status + &quot;\n&quot;
+                    + &quot;Medication: &quot; + drug + &quot; (&quot; + quantity + &quot;)&quot;;
+<span class="nc" id="L122">            rows.add(row);</span>
+        }
+
+<span class="nc" id="L125">        adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L126">    }</span>
+
+    private void showOrderActions(OrderRow o) {
+<span class="nc" id="L129">        String msg = &quot;Order #&quot; + o.id + &quot;\n&quot;</span>
+                + &quot;Patient: &quot; + o.patientName + &quot;\n&quot;
+                + &quot;Status: &quot; + o.status + &quot;\n&quot;;
+
+<span class="nc" id="L133">        AlertDialog.Builder b = new AlertDialog.Builder(this)</span>
+<span class="nc" id="L134">                .setTitle(&quot;Manage Order&quot;)</span>
+<span class="nc" id="L135">                .setMessage(msg)</span>
+<span class="nc" id="L136">                .setNegativeButton(&quot;Close&quot;, null);</span>
+
+<span class="nc" id="L138">        String s = o.status.toUpperCase();</span>
+
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (&quot;PENDING&quot;.equals(s)) {</span>
+<span class="nc" id="L141">            b.setPositiveButton(&quot;Accept (Fill)&quot;, (d, w) -&gt; updateStatus(o, &quot;READY_FOR_PICKUP&quot;));</span>
+<span class="nc" id="L142">            b.setNeutralButton(&quot;Decline&quot;, (d, w) -&gt; updateStatus(o, &quot;REJECTED&quot;));</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        } else if (&quot;READY_FOR_PICKUP&quot;.equals(s)) {</span>
+<span class="nc" id="L144">            b.setPositiveButton(&quot;Complete&quot;, (d, w) -&gt; updateStatus(o, &quot;FULFILLED&quot;));</span>
+<span class="nc" id="L145">            b.setNeutralButton(&quot;Decline&quot;, (d, w) -&gt; updateStatus(o, &quot;REJECTED&quot;));</span>
+        }
+
+<span class="nc" id="L148">        b.show();</span>
+<span class="nc" id="L149">    }</span>
+
+    private void updateStatus(OrderRow o, String newStatus) {
+<span class="nc" id="L152">        String url = URL_STATUS_BASE + o.id + &quot;/status&quot;;</span>
+
+<span class="nc" id="L154">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L156">            body.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L157">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L159">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                url,
+                body,
+                resp -&gt; {
+<span class="nc" id="L164">                    String ns = resp.optString(&quot;newStatus&quot;, newStatus);</span>
+<span class="nc" id="L165">                    o.status = ns;</span>
+<span class="nc" id="L166">                    Toast.makeText(getApplicationContext(),</span>
+                            &quot;Order #&quot; + o.id + &quot; updated to &quot; + ns,
+<span class="nc" id="L168">                            Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L169">                    fetchOrders();</span>
+<span class="nc" id="L170">                },</span>
+<span class="nc" id="L171">                (VolleyError err) -&gt; handleVolleyAuthError(err, () -&gt; updateStatus(o, newStatus))</span>
+<span class="nc" id="L172">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L175">                return buildAuthHeaders();</span>
+            }
+        };
+
+<span class="nc" id="L179">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L180">    }</span>
+
+    private Map&lt;String, String&gt; buildAuthHeaders() {
+<span class="nc" id="L183">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L184">        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L186">            h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+        }
+<span class="nc" id="L188">        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L189">        h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L190">        return h;</span>
+    }
+
+    private static class OrderRow {
+        long id;
+        String patientName;
+        String status;
+        String drug;
+        int quantity;
+        String date;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CartActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">CartActivity.java</span></div><h1>CartActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.ArrayList;
+
+/**
+ * Screen that shows the user's current pharmacy cart.
+ * &lt;p&gt;
+ * It lists all medicines stored in {@link CartStore}, shows the current
+ * total price, lets the user remove items by tapping on a row, and has a
+ * button to continue to {@link CheckoutActivity}.
+ * @author quinn beckman
+ */
+<span class="nc" id="L25">public class CartActivity extends BaseActivity {</span>
+
+    /** ListView that displays one line of text for each cart item. */
+    private ListView cartList;
+    /** TextView showing the formatted cart total. */
+    private TextView totalTxt;
+    /** Button that takes the user to the checkout screen. */
+    private Button checkoutBtn;
+
+    /**
+     * Backing data for {@link #cartList}. Each string is a human-readable
+     * summary of a single {@link CartStore.CartItem}.
+     */
+<span class="nc" id="L38">    private final ArrayList&lt;String&gt; lines = new ArrayList&lt;&gt;();</span>
+    /** Adapter that connects {@link #lines} to the {@link #cartList} view. */
+    private ArrayAdapter&lt;String&gt; adapter;
+
+    /**
+     * Initializes the cart screen: sets up the layout, bottom navigation,
+     * ListView adapter, click listeners, and loads the current cart contents.
+     *
+     * @param savedInstanceState previous state if the activity is being
+     *                           re-created, or {@code null} on first launch
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L51">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L52">        setContentView(R.layout.activity_cart);</span>
+<span class="nc" id="L53">        setupBottomNav(0);</span>
+
+<span class="nc" id="L55">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L57">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L58">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L59">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L60">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L62">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L63">            return insets;</span>
+        });
+
+<span class="nc" id="L66">        cartList = findViewById(R.id.cart_list);</span>
+<span class="nc" id="L67">        totalTxt = findViewById(R.id.cart_total_txt);</span>
+<span class="nc" id="L68">        checkoutBtn = findViewById(R.id.checkout_btn);</span>
+
+<span class="nc" id="L70">        adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, lines);</span>
+<span class="nc" id="L71">        cartList.setAdapter(adapter);</span>
+
+        // When the user taps an item, remove one unit of that medicine.
+<span class="nc" id="L74">        cartList.setOnItemClickListener((parent, view, position, id) -&gt; {</span>
+<span class="nc" id="L75">            CartStore.CartItem ci = CartStore.get().items().get(position);</span>
+<span class="nc" id="L76">            CartStore.get().removeOne(ci.medicine.id);</span>
+<span class="nc" id="L77">            Toast.makeText(this, &quot;Removed one: &quot; + ci.medicine.name, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L78">            refresh();</span>
+<span class="nc" id="L79">        });</span>
+
+        // Go to the checkout screen when the button is pressed.
+<span class="nc" id="L82">        checkoutBtn.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L83">                startActivity(new android.content.Intent(this, CheckoutActivity.class))</span>
+        );
+<span class="nc" id="L85">        refresh();</span>
+<span class="nc" id="L86">    }</span>
+
+    /**
+     * Called when the activity comes to the foreground again.
+     * &lt;p&gt;
+     * We re-run {@link #refresh()} so the list and total stay in sync with
+     * any changes that might have happened while this screen was not visible.
+     */
+    @Override
+    protected void onResume() {
+<span class="nc" id="L96">        super.onResume();</span>
+<span class="nc" id="L97">        refresh();</span>
+<span class="nc" id="L98">    }</span>
+
+    /**
+     * Reloads cart data from {@link CartStore} and updates the UI.
+     * &lt;ul&gt;
+     *     &lt;li&gt;Rebuilds the {@link #lines} list with the latest items.&lt;/li&gt;
+     *     &lt;li&gt;Notifies the adapter so the ListView is redrawn.&lt;/li&gt;
+     *     &lt;li&gt;Updates the total price text.&lt;/li&gt;
+     *     &lt;li&gt;Enables or disables the checkout button depending on whether
+     *         the cart is empty.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    private void refresh() {
+<span class="nc" id="L111">        lines.clear();</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        for (CartStore.CartItem ci : CartStore.get().items()) {</span>
+<span class="nc" id="L113">            String line = ci.medicine.name + &quot; · &quot; + ci.medicine.dosage +</span>
+                    &quot; · Qty &quot; + ci.qty + &quot; · &quot; +
+<span class="nc" id="L115">                    String.format(&quot;$%.2f&quot;, (ci.medicine.priceCents * ci.qty) / 100.0);</span>
+<span class="nc" id="L116">            lines.add(line);</span>
+<span class="nc" id="L117">        }</span>
+<span class="nc" id="L118">        adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L119">        totalTxt.setText(String.format(&quot;Total: $%.2f&quot;, CartStore.get().totalCents() / 100.0));</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        checkoutBtn.setEnabled(CartStore.get().totalCents() &gt; 0);</span>
+<span class="nc" id="L121">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

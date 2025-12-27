@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="13dp"
+    android:paddingEnd="13dp">
+
+    <LinearLayout
+        android:id="@+id/add_to_cart_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_vertical|end"
+        android:paddingEnd="24dp"
+        android:background="@drawable/bg_add_to_cart_rounded">
+
+        <ImageView
+            android:id="@+id/add_to_cart_icon"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/ic_add_to_cart"
+        app:tint="@android:color/white"
+        android:layout_marginEnd="4dp"/>
+    </LinearLayout>
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/med_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        app:cardCornerRadius="12dp"
+        app:cardUseCompatPadding="false"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:strokeWidth="0dp"
+        app:strokeColor="@android:color/transparent"
+>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="10dp"
+            android:paddingTop="0dp"
+            android:paddingEnd="0dp"
+            android:paddingBottom="10dp">
+
+            <ImageView
+                android:id="@+id/med_image"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_bell"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <TextView
+                android:id="@+id/med_brand_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Brand Name"
+                android:textStyle="bold"
+                app:layout_constraintStart_toEndOf="@id/med_image"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/med_price"
+                android:textSize="20sp"
+                android:textColor="#333333"
+                android:layout_marginStart="12dp"
+            android:layout_marginTop="15dp"/>
+
+            <TextView
+                android:id="@+id/med_price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$25"
+                android:textSize="17sp"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:paddingLeft="30dp"
+                android:paddingRight="30dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:background="@drawable/bg_price_chip"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/med_generic_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="generic name"
+                app:layout_constraintStart_toEndOf="@id/med_image"
+                app:layout_constraintTop_toBottomOf="@id/med_brand_name"
+                app:layout_constraintEnd_toStartOf="@id/med_price"
+                android:textSize="13sp"
+                android:textColor="#777777"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="2dp"
+                />
+
+            <TextView
+                android:id="@+id/med_dosage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="500 mg"
+                android:textSize="15sp"
+                android:textColor="@color/saint_red"
+                android:textStyle="bold"
+                app:layout_constraintTop_toBottomOf="@id/med_generic_name"
+                app:layout_constraintStart_toEndOf="@id/med_image"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginTop="8dp"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>

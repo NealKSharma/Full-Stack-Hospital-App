@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessagesActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">MessagesActivity.java</span></div><h1>MessagesActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.text.InputType;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L31">public class MessagesActivity extends BaseActivity {</span>
+
+<span class="nc" id="L33">    private final ArrayList&lt;String&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L34">    private final ArrayList&lt;Conversation&gt; conversations = new ArrayList&lt;&gt;();</span>
+    private ArrayAdapter&lt;String&gt; adapter;
+
+    private static final String BASE_API = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev&quot;;
+    private static final String URL_CONVERSATIONS = BASE_API + &quot;/api/chat/conversations&quot;;
+    private static final String URL_CONVERSATION_CREATE = BASE_API + &quot;/api/chat/start&quot;;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L43">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L44">        setContentView(R.layout.activity_messages);</span>
+<span class="nc" id="L45">        setupBottomNav(R.id.nav_messages);</span>
+
+<span class="nc" id="L47">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L49">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L50">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L51">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L52">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L54">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L55">            return insets;</span>
+        });
+
+<span class="nc" id="L58">        ListView convoList = findViewById(R.id.chat_list);</span>
+<span class="nc" id="L59">        Button newMsgBtn = findViewById(R.id.btn_new_message);</span>
+
+<span class="nc" id="L61">        adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, rows);</span>
+<span class="nc" id="L62">        convoList.setAdapter(adapter);</span>
+
+<span class="nc" id="L64">        convoList.setOnItemClickListener((parent, view, position, id) -&gt; {</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">            if (position &lt; 0 || position &gt;= conversations.size()) return;</span>
+<span class="nc" id="L66">            Conversation c = conversations.get(position);</span>
+<span class="nc" id="L67">            openConversation(c.roomId);</span>
+<span class="nc" id="L68">        });</span>
+
+<span class="nc" id="L70">        newMsgBtn.setOnClickListener(v -&gt; promptNewConversation());</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    protected void onResume() {
+<span class="nc" id="L75">        super.onResume();</span>
+<span class="nc" id="L76">        fetchConversations();</span>
+<span class="nc" id="L77">    }</span>
+
+    private void openConversation(String conversationId) {
+<span class="nc" id="L80">        Intent detail = new Intent(this, ChatDetailActivity.class);</span>
+<span class="nc" id="L81">        detail.putExtra(&quot;conversationId&quot;, conversationId);</span>
+<span class="nc" id="L82">        detail.putExtra(&quot;isGroupChat&quot;, conversationId.contains(&quot;group&quot;));</span>
+
+<span class="nc" id="L84">        SharedPreferences prefs = getSharedPreferences(&quot;auth_prefs&quot;, MODE_PRIVATE);</span>
+<span class="nc" id="L85">        String ignoredName = prefs.getString(&quot;last_user&quot;, &quot;&quot;);</span>
+<span class="nc" id="L86">        String[] parts = conversationId.split(&quot;-&quot;);</span>
+<span class="nc" id="L87">        String chatTitle = java.util.Arrays.stream(parts)</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                .filter(p -&gt; !p.equalsIgnoreCase(&quot;GROUP&quot;))</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                .filter(p -&gt; !p.equalsIgnoreCase(ignoredName))</span>
+<span class="nc" id="L90">                .collect(java.util.stream.Collectors.joining(&quot;, &quot;));</span>
+
+<span class="nc" id="L92">        detail.putExtra(&quot;chatTitle&quot;, chatTitle);</span>
+<span class="nc" id="L93">        startActivity(detail);</span>
+<span class="nc" id="L94">    }</span>
+
+    private Map&lt;String, String&gt; buildHeaders() {
+<span class="nc" id="L97">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L98">        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L99" title="All 4 branches missed.">        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L100">            h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+        }
+<span class="nc" id="L102">        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L103">        h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L104">        return h;</span>
+    }
+
+    private void fetchConversations() {
+<span class="nc" id="L108">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                URL_CONVERSATIONS,
+                null,
+                (JSONArray resp) -&gt; {
+<span class="nc" id="L113">                    conversations.clear();</span>
+<span class="nc" id="L114">                    rows.clear();</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L116">                        JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                        if (o == null) continue;</span>
+
+<span class="nc" id="L119">                        Conversation c = new Conversation();</span>
+<span class="nc" id="L120">                        c.roomId = o.optString(&quot;conversationId&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                        String prettyRoom = c.roomId.startsWith(&quot;group-&quot;) ? c.roomId.substring(6).replace(&quot;-&quot;, &quot;, &quot;) : c.roomId;</span>
+<span class="nc" id="L122">                        c.otherUser = o.optString(&quot;otherUser&quot;, &quot;&quot;);</span>
+<span class="nc" id="L123">                        c.lastMessage = o.optString(&quot;lastMessage&quot;, &quot;&quot;);</span>
+
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                        if (!c.roomId.isEmpty()) {</span>
+<span class="nc" id="L126">                            conversations.add(c);</span>
+
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                            String title = c.otherUser.isEmpty() ? prettyRoom : c.otherUser;</span>
+<span class="nc" id="L129">                            String line = title;</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                            if (!c.lastMessage.isEmpty()) {</span>
+<span class="nc" id="L131">                                line += &quot;\n&quot; + c.lastMessage;</span>
+                            }
+<span class="nc" id="L133">                            rows.add(line);</span>
+                        }
+                    }
+
+<span class="nc" id="L137">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L138">                },</span>
+<span class="nc" id="L139">                (VolleyError error) -&gt; handleVolleyAuthError(error, this::fetchConversations)</span>
+<span class="nc" id="L140">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L143">                return buildHeaders();</span>
+            }
+        };
+
+<span class="nc" id="L147">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L148">    }</span>
+
+    private void promptNewConversation() {
+<span class="nc" id="L151">        final EditText input = new EditText(this);</span>
+<span class="nc" id="L152">        input.setHint(&quot;Recipient username&quot;);</span>
+<span class="nc" id="L153">        input.setInputType(InputType.TYPE_CLASS_TEXT);</span>
+
+<span class="nc" id="L155">        int pad = (int) (16 * getResources().getDisplayMetrics().density);</span>
+<span class="nc" id="L156">        LinearLayout wrapper = new LinearLayout(this);</span>
+<span class="nc" id="L157">        wrapper.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L158">        wrapper.setPadding(pad, pad, pad, pad);</span>
+<span class="nc" id="L159">        wrapper.addView(input);</span>
+
+<span class="nc" id="L161">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L162">                .setTitle(&quot;New Message&quot;)</span>
+<span class="nc" id="L163">                .setView(wrapper)</span>
+<span class="nc" id="L164">                .setPositiveButton(&quot;Start&quot;, (d, w) -&gt; {</span>
+<span class="nc" id="L165">                    String target = input.getText().toString().trim();</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                    if (target.isEmpty()) {</span>
+<span class="nc" id="L167">                        Toast.makeText(getApplicationContext(),</span>
+                                &quot;Please enter someone to message&quot;,
+<span class="nc" id="L169">                                Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L170">                        return;</span>
+                    }
+<span class="nc" id="L172">                    createConversation(target);</span>
+<span class="nc" id="L173">                })</span>
+<span class="nc" id="L174">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L175">                .show();</span>
+<span class="nc" id="L176">    }</span>
+
+    private void createConversation(String target) {
+<span class="nc" id="L179">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L181">            body.put(&quot;recipient&quot;, target);</span>
+<span class="nc" id="L182">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L184">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                URL_CONVERSATION_CREATE,
+                body,
+                resp -&gt; {
+<span class="nc" id="L189">                    String roomId = resp.optString(&quot;conversationId&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                    if (roomId.isEmpty()) {</span>
+<span class="nc" id="L191">                        Toast.makeText(getApplicationContext(),</span>
+<span class="nc" id="L192">                                &quot;No roomId returned&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L193">                        return;</span>
+                    }
+<span class="nc" id="L195">                    openConversation(roomId);</span>
+<span class="nc" id="L196">                },</span>
+<span class="nc" id="L197">                (VolleyError err) -&gt; handleVolleyAuthError(err, () -&gt; createConversation(target))</span>
+<span class="nc" id="L198">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L201">                return buildHeaders();</span>
+            }
+        };
+
+<span class="nc" id="L205">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L206">    }</span>
+
+    private static class Conversation {
+        String roomId;
+        String otherUser;
+        String lastMessage;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

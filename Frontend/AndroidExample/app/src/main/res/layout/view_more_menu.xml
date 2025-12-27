@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <View
+        android:id="@+id/more_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:alpha="0"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/more_panel"
+        android:layout_width="260dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="@color/saint_red"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/more_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="More"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:id="@+id/more_notifications"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notifications"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_histories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Patient Histories"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_admin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Admin Portal"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_pharmacist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pharmacist Portal"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_doctor_prescriptions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Prescriptions"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="8dp" />
+
+        <TextView
+            android:id="@+id/more_logout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:paddingVertical="24dp" />
+
+    </LinearLayout>
+
+</FrameLayout>

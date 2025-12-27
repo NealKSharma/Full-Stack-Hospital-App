@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SaintCysHospital"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.project.saintcyshospital.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".PharmacistActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DoctorPrescriptionsActivity"
+            android:exported="false"
+            android:label="Prescriptions" />
+        <activity
+            android:name=".ChatDetailActivity"
+            android:exported="false"
+            android:label="Messages" />
+        <activity
+            android:name=".CheckoutActivity"
+            android:exported="false"
+            android:label="Checkout" />
+        <activity
+            android:name=".MessagesActivity"
+            android:exported="false"
+            android:label="Messages" />
+        <activity
+            android:name=".NotificationsActivity"
+            android:exported="false"
+            android:label="Notifications" />
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="User Information" />
+        <activity
+            android:name=".BaseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false"
+            android:label="Admin" />
+        <activity
+            android:name=".CartActivity"
+            android:exported="false"
+            android:label="Cart" />
+        <activity
+            android:name=".PharmacyActivity"
+            android:exported="false"
+            android:label="Pharmacy" />
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false"
+            android:label="Signup" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false"
+            android:label="Login" />
+        <activity
+            android:name=".ReportsActivity"
+            android:exported="false"
+            android:label="Reports" />
+        <activity
+            android:name=".HistoriesActivity"
+            android:exported="false"
+            android:label="Patient Histories" />
+        <activity android:name=".AppointmentsActivity" />
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".AppointmentDetailsActivity"
+            android:exported="false"
+            android:label="Appointment Details" />
+        <activity
+            android:name=".VoiceCallActivity"
+            android:exported="false"
+            android:label="Voice Call" />
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="notif_fcm_console_default" />
+    </application>
+
+</manifest>

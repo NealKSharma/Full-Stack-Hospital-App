@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatDetailActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">ChatDetailActivity.java</span></div><h1>ChatDetailActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.os.Environment;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.NetworkResponse;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.project.saintcyshospital.net.MultipartFormRequest;
+import com.project.saintcyshospital.ws.ChatWsHub;
+
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+<span class="nc" id="L35">public class ChatDetailActivity extends BaseActivity {</span>
+
+    private String conversationId;
+<span class="nc" id="L38">    private final ArrayList&lt;String&gt; lines = new ArrayList&lt;&gt;();</span>
+    private ArrayAdapter&lt;String&gt; adapter;
+<span class="nc" id="L40">    private final Map&lt;Integer, String&gt; positionToFilename = new HashMap&lt;&gt;();</span>
+
+
+    private static final String URL_CHAT_HISTORY_BASE =
+            &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/chat/history/&quot;;
+    private boolean isGroupChat;
+    private String chatTitle;
+
+    private android.widget.ImageButton btnAttach;
+    private androidx.activity.result.ActivityResultLauncher&lt;String&gt; pickFile;
+<span class="nc" id="L50">    private final java.util.Map&lt;Integer, Long&gt; positionToMsgId = new java.util.HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L52">    private final android.content.BroadcastReceiver chatReceiver =</span>
+<span class="nc" id="L53">            new android.content.BroadcastReceiver() {</span>
+                @Override
+                public void onReceive(android.content.Context c,
+                                      android.content.Intent i) {
+
+<span class="nc" id="L58">                    String cid = i.getStringExtra(ChatWsHub.EXTRA_CONVO_ID);</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">                    if (cid == null || !cid.equals(conversationId)) return;</span>
+
+<span class="nc" id="L61">                    String senderRaw = i.getStringExtra(ChatWsHub.EXTRA_SENDER);</span>
+<span class="nc" id="L62">                    String content   = i.getStringExtra(ChatWsHub.EXTRA_CONTENT);</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                    if (content == null || content.isEmpty()) return;</span>
+
+<span class="nc" id="L65">                    String meFirst = getMyFirstName();</span>
+
+<span class="nc bnc" id="L67" title="All 4 branches missed.">                    String senderFirst = (senderRaw != null &amp;&amp; !senderRaw.isEmpty())</span>
+<span class="nc" id="L68">                            ? senderRaw</span>
+<span class="nc" id="L69">                            : &quot;peer&quot;;</span>
+
+<span class="nc" id="L71">                    int spaceIdx = senderFirst.indexOf(' ');</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                    if (spaceIdx &gt; 0) {</span>
+<span class="nc" id="L73">                        senderFirst = senderFirst.substring(0, spaceIdx);</span>
+                    }
+
+                    String displaySender =
+<span class="nc bnc" id="L77" title="All 4 branches missed.">                            (!meFirst.isEmpty() &amp;&amp; senderFirst.equalsIgnoreCase(meFirst))</span>
+<span class="nc" id="L78">                                    ? &quot;me&quot;</span>
+<span class="nc" id="L79">                                    : senderFirst;</span>
+
+<span class="nc" id="L81">                    String line = displaySender + &quot;: &quot; + content;</span>
+
+<span class="nc" id="L83">                    lines.add(line);</span>
+<span class="nc" id="L84">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L85">                }</span>
+            };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L90">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L91">        setContentView(R.layout.activity_chat_detail);</span>
+<span class="nc" id="L92">        setupBottomNav(0);</span>
+
+<span class="nc" id="L94">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L96">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L97">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L98">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L99">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L101">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L102">            return insets;</span>
+        });
+
+<span class="nc" id="L105">        conversationId = getIntent().getStringExtra(&quot;conversationId&quot;);</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">        if (conversationId == null || conversationId.isEmpty()) {</span>
+<span class="nc" id="L107">            conversationId = &quot;unknown&quot;;</span>
+        }
+
+<span class="nc" id="L110">        boolean isGroupChat = getIntent().getBooleanExtra(&quot;isGroupChat&quot;, false);</span>
+
+<span class="nc" id="L112">        String chatTitle = getIntent().getStringExtra(&quot;chatTitle&quot;);</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (chatTitle == null || chatTitle.isEmpty()) {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            chatTitle = isGroupChat ? &quot;Group Chat&quot; : &quot;Chat&quot;;</span>
+        }
+
+<span class="nc" id="L117">        this.isGroupChat = isGroupChat;</span>
+<span class="nc" id="L118">        this.chatTitle  = chatTitle;</span>
+
+<span class="nc" id="L120">        isGroupChat = getIntent().getBooleanExtra(&quot;isGroupChat&quot;, false);</span>
+
+<span class="nc" id="L122">        ImageButton backBtn = findViewById(R.id.btn_back);</span>
+<span class="nc" id="L123">        ImageButton callBtn = findViewById(R.id.btn_call);</span>
+<span class="nc" id="L124">        ImageView avatar  = findViewById(R.id.chat_avatar);</span>
+<span class="nc" id="L125">        TextView titleTv = findViewById(R.id.chat_title);</span>
+
+<span class="nc" id="L127">        titleTv.setText(chatTitle);</span>
+
+<span class="nc" id="L129">        backBtn.setOnClickListener(v -&gt; finish());</span>
+
+<span class="nc" id="L131">        callBtn.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L132">                Toast.makeText(this, &quot;Call feature coming soon&quot;, Toast.LENGTH_SHORT).show()</span>
+        );
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (isGroupChat) {</span>
+<span class="nc" id="L136">            avatar.setImageResource(R.drawable.ic_people);</span>
+        } else {
+<span class="nc" id="L138">            avatar.setImageResource(R.drawable.ic_person);</span>
+        }
+
+<span class="nc" id="L141">        ListView chatList = findViewById(R.id.chat_list);</span>
+<span class="nc" id="L142">        EditText msgInput = findViewById(R.id.msg_input);</span>
+<span class="nc" id="L143">        ImageButton btnSend = findViewById(R.id.btn_send);</span>
+
+<span class="nc" id="L145">        btnAttach = findViewById(R.id.btn_attach);</span>
+
+<span class="nc" id="L147">        boolean finalIsGroupChat = isGroupChat;</span>
+<span class="nc" id="L148">        adapter = new ArrayAdapter&lt;String&gt;(this, 0, lines) {</span>
+            @Override
+            public android.view.View getView(int position, android.view.View convertView,
+                                             android.view.ViewGroup parent) {
+
+<span class="nc" id="L153">                String line = getItem(position);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                if (line == null) line = &quot;&quot;;</span>
+
+<span class="nc" id="L156">                int colonIdx = line.indexOf(':');</span>
+<span class="nc" id="L157">                String sender = &quot;other&quot;;</span>
+<span class="nc" id="L158">                String text = line;</span>
+
+<span class="nc bnc" id="L160" title="All 4 branches missed.">                if (colonIdx &gt;= 0 &amp;&amp; colonIdx + 2 &lt;= line.length()) {</span>
+<span class="nc" id="L161">                    sender = line.substring(0, colonIdx).trim();</span>
+<span class="nc" id="L162">                    text   = line.substring(colonIdx + 2);</span>
+                }
+
+<span class="nc" id="L165">                boolean isMe = sender.equalsIgnoreCase(&quot;me&quot;);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                int layoutId = isMe ? R.layout.item_chat_me : R.layout.item_chat_other;</span>
+
+<span class="nc bnc" id="L168" title="All 4 branches missed.">                if (convertView == null || convertView.getTag() == null</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                        || (int) convertView.getTag() != layoutId) {</span>
+<span class="nc" id="L170">                    convertView = getLayoutInflater().inflate(layoutId, parent, false);</span>
+<span class="nc" id="L171">                    convertView.setTag(layoutId);</span>
+                }
+
+<span class="nc" id="L174">                android.widget.TextView msgText   = convertView.findViewById(R.id.msg_text);</span>
+<span class="nc" id="L175">                android.widget.TextView senderLbl = convertView.findViewById(R.id.msg_sender);</span>
+
+<span class="nc" id="L177">                String fname = positionToFilename.get(position);</span>
+<span class="nc bnc" id="L178" title="All 4 branches missed.">                if (fname != null &amp;&amp; !fname.isEmpty()) {</span>
+                    String combined;
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                    if (text == null) text = &quot;&quot;;</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">                    if (text.isEmpty()) {</span>
+<span class="nc" id="L183">                        combined = fname;</span>
+                    } else {
+<span class="nc" id="L185">                        combined = text + &quot;  •  &quot; + fname;</span>
+                    }
+
+<span class="nc" id="L188">                    SpannableString ss = new SpannableString(combined);</span>
+<span class="nc" id="L189">                    int start = combined.length() - fname.length();</span>
+<span class="nc" id="L190">                    int end   = combined.length();</span>
+
+<span class="nc" id="L192">                    ss.setSpan(</span>
+                            new ForegroundColorSpan(0xFF134ab0),
+                            start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+<span class="nc" id="L198">                    msgText.setText(ss);</span>
+<span class="nc" id="L199">                } else {</span>
+<span class="nc" id="L200">                    msgText.setText(text);</span>
+                }
+
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                if (senderLbl != null) {</span>
+<span class="nc bnc" id="L205" title="All 6 branches missed.">                    if (finalIsGroupChat &amp;&amp; !isMe &amp;&amp; isEndOfRun(position, sender)) {</span>
+<span class="nc" id="L206">                        senderLbl.setText(sender);</span>
+<span class="nc" id="L207">                        senderLbl.setVisibility(android.view.View.VISIBLE);</span>
+                    } else {
+<span class="nc" id="L209">                        senderLbl.setVisibility(android.view.View.GONE);</span>
+                    }
+                }
+
+<span class="nc" id="L213">                return convertView;</span>
+            }
+
+            private boolean isEndOfRun(int position, String sender) {
+<span class="nc" id="L217">                int count = getCount();</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                if (position &gt;= count - 1) {</span>
+<span class="nc" id="L219">                    return true;</span>
+                }
+<span class="nc" id="L221">                String nextLine = getItem(position + 1);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                if (nextLine == null) return true;</span>
+
+<span class="nc" id="L224">                int colonIdx = nextLine.indexOf(':');</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                String nextSender = (colonIdx &gt;= 0)</span>
+<span class="nc" id="L226">                        ? nextLine.substring(0, colonIdx).trim()</span>
+<span class="nc" id="L227">                        : &quot;other&quot;;</span>
+
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                return !sender.equalsIgnoreCase(nextSender);</span>
+            }
+        };
+
+<span class="nc" id="L233">        chatList.setAdapter(adapter);</span>
+
+<span class="nc" id="L235">        pickFile = registerForActivityResult(</span>
+                new androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+                uri -&gt; {
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                    if (uri != null) uploadAttachment(uri);</span>
+<span class="nc" id="L239">                });</span>
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        if (btnAttach != null) {</span>
+<span class="nc" id="L242">            btnAttach.setOnClickListener(v -&gt; pickFile.launch(&quot;*/*&quot;));</span>
+        }
+
+<span class="nc" id="L245">        chatList.setOnItemClickListener((parent, view, position, id) -&gt; {</span>
+<span class="nc" id="L246">            Long msgId = positionToMsgId.get(position);</span>
+<span class="nc" id="L247">            String fname = positionToFilename.get(position);</span>
+
+<span class="nc bnc" id="L249" title="All 4 branches missed.">            if (msgId != null &amp;&amp; msgId &gt; 0) {</span>
+<span class="nc" id="L250">                downloadAttachment(msgId, fname);</span>
+            }
+<span class="nc" id="L252">        });</span>
+
+<span class="nc" id="L254">        loadHistory();</span>
+
+<span class="nc" id="L256">        btnSend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L257">            String text = msgInput.getText().toString().trim();</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">            if (text.isEmpty()) return;</span>
+
+            try {
+<span class="nc" id="L261">                JSONObject out = new JSONObject()</span>
+<span class="nc" id="L262">                        .put(&quot;type&quot;, &quot;CHAT_SEND&quot;)</span>
+<span class="nc" id="L263">                        .put(&quot;roomId&quot;, conversationId)</span>
+<span class="nc" id="L264">                        .put(&quot;content&quot;, text);</span>
+
+<span class="nc" id="L266">                boolean ok = ChatWsHub.get().send(out.toString());</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                if (ok) {</span>
+<span class="nc" id="L268">                    String mine = &quot;me: &quot; + text;</span>
+<span class="nc" id="L269">                    lines.add(mine);</span>
+<span class="nc" id="L270">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L271">                    msgInput.setText(&quot;&quot;);</span>
+<span class="nc" id="L272">                } else {</span>
+<span class="nc" id="L273">                    Toast.makeText(getApplicationContext(),</span>
+                            &quot;Socket not connected&quot;,
+<span class="nc" id="L275">                            Toast.LENGTH_SHORT).show();</span>
+                }
+<span class="nc" id="L277">            } catch (Exception ignored) {}</span>
+<span class="nc" id="L278">        });</span>
+<span class="nc" id="L279">    }</span>
+
+    @Override
+    protected void onStart() {
+<span class="nc" id="L283">        super.onStart();</span>
+<span class="nc" id="L284">        ChatWsHub.get().start(getApplicationContext(), conversationId);</span>
+
+<span class="nc" id="L286">        android.content.IntentFilter f =</span>
+                new android.content.IntentFilter(ChatWsHub.ACTION_CHAT_MESSAGE);
+
+<span class="nc" id="L289">        androidx.localbroadcastmanager.content.LocalBroadcastManager</span>
+<span class="nc" id="L290">                .getInstance(this)</span>
+<span class="nc" id="L291">                .registerReceiver(chatReceiver, f);</span>
+<span class="nc" id="L292">    }</span>
+
+
+    @Override
+    protected void onStop() {
+<span class="nc" id="L297">        androidx.localbroadcastmanager.content.LocalBroadcastManager</span>
+<span class="nc" id="L298">                .getInstance(this)</span>
+<span class="nc" id="L299">                .unregisterReceiver(chatReceiver);</span>
+
+<span class="nc" id="L301">        ChatWsHub.get().stop();</span>
+<span class="nc" id="L302">        super.onStop();</span>
+
+<span class="nc" id="L304">    }</span>
+
+    private void loadHistory() {
+<span class="nc" id="L307">        String url = URL_CHAT_HISTORY_BASE</span>
+<span class="nc" id="L308">                + android.net.Uri.encode(conversationId);</span>
+
+<span class="nc" id="L310">        com.android.volley.toolbox.JsonArrayRequest req =</span>
+                new com.android.volley.toolbox.JsonArrayRequest(
+                        com.android.volley.Request.Method.GET,
+                        url,
+                        null,
+                        resp -&gt; {
+<span class="nc" id="L316">                            lines.clear();</span>
+<span class="nc" id="L317">                            positionToMsgId.clear();</span>
+<span class="nc" id="L318">                            positionToFilename.clear();</span>
+
+<span class="nc" id="L320">                            String meFirst = getMyFirstName();</span>
+
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                            for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L323">                                org.json.JSONObject o =</span>
+<span class="nc" id="L324">                                        resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                                if (o == null) continue;</span>
+
+<span class="nc" id="L327">                                String senderRaw =</span>
+<span class="nc" id="L328">                                        o.optString(&quot;sender&quot;, &quot;peer&quot;);</span>
+<span class="nc" id="L329">                                String content =</span>
+<span class="nc" id="L330">                                        o.optString(&quot;content&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L332">                                String senderFirst = senderRaw;</span>
+<span class="nc" id="L333">                                int spaceIdx = senderFirst.indexOf(' ');</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">                                if (spaceIdx &gt; 0) {</span>
+<span class="nc" id="L335">                                    senderFirst =</span>
+<span class="nc" id="L336">                                            senderFirst.substring(0, spaceIdx);</span>
+                                }
+
+                                String displaySender;
+<span class="nc bnc" id="L340" title="All 2 branches missed.">                                if (!meFirst.isEmpty() &amp;&amp;</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">                                        senderFirst.equalsIgnoreCase(meFirst)) {</span>
+<span class="nc" id="L342">                                    displaySender = &quot;me&quot;;</span>
+                                } else {
+<span class="nc" id="L344">                                    displaySender = senderFirst;</span>
+                                }
+
+<span class="nc" id="L347">                                Long msgId = o.optLong(&quot;id&quot;, -1);</span>
+<span class="nc" id="L348">                                boolean hasAttachment = o.optBoolean(&quot;hasAttachment&quot;, false);</span>
+<span class="nc" id="L349">                                String filename = o.optString(&quot;attachmentFilename&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L351">                                String display = displaySender + &quot;: &quot; + content;</span>
+
+<span class="nc bnc" id="L353" title="All 6 branches missed.">                                if (hasAttachment &amp;&amp; (filename == null || filename.isEmpty())) {</span>
+<span class="nc" id="L354">                                    filename = &quot;attachment&quot;;</span>
+                                }
+
+<span class="nc" id="L357">                                int pos = lines.size();</span>
+<span class="nc bnc" id="L358" title="All 2 branches missed.">                                positionToMsgId.put(pos, (msgId &gt; 0) ? msgId : null);</span>
+
+<span class="nc bnc" id="L360" title="All 2 branches missed.">                                if (hasAttachment) {</span>
+<span class="nc" id="L361">                                    positionToFilename.put(pos, filename);</span>
+                                }
+
+<span class="nc" id="L364">                                lines.add(display);</span>
+
+                            }
+
+
+<span class="nc" id="L369">                            adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L370">                        },</span>
+<span class="nc" id="L371">                        err -&gt; Toast.makeText(</span>
+<span class="nc" id="L372">                                getApplicationContext(),</span>
+                                &quot;Failed to load history&quot;,
+                                Toast.LENGTH_SHORT
+<span class="nc" id="L375">                        ).show()</span>
+<span class="nc" id="L376">                ) {</span>
+                    @Override
+                    public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L379">                        java.util.Map&lt;String, String&gt; h =</span>
+                                new java.util.HashMap&lt;&gt;();
+<span class="nc" id="L381">                        String access =</span>
+<span class="nc" id="L382">                                AuthManager.getAccessToken(</span>
+<span class="nc" id="L383">                                        getApplicationContext());</span>
+<span class="nc bnc" id="L384" title="All 4 branches missed.">                        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L385">                            h.put(&quot;Authorization&quot;,</span>
+                                    &quot;Bearer &quot; + access);
+                        }
+<span class="nc" id="L388">                        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L389">                        return h;</span>
+                    }
+                };
+
+<span class="nc" id="L393">        VolleySingleton</span>
+<span class="nc" id="L394">                .getInstance(getApplicationContext())</span>
+<span class="nc" id="L395">                .addToRequestQueue(req);</span>
+<span class="nc" id="L396">    }</span>
+
+    private String getMyFirstName() {
+<span class="nc" id="L399">        SharedPreferences prefs =</span>
+<span class="nc" id="L400">                getSharedPreferences(&quot;auth_prefs&quot;, MODE_PRIVATE);</span>
+<span class="nc" id="L401">        return prefs.getString(&quot;last_user&quot;, &quot;&quot;);</span>
+    }
+
+    private void uploadAttachment(android.net.Uri uri) {
+<span class="nc" id="L405">        String text = &quot;&quot;;</span>
+
+<span class="nc" id="L407">        String fileName = &quot;attachment&quot;;</span>
+<span class="nc" id="L408">        String mime = getContentResolver().getType(uri);</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">        if (mime == null) mime = &quot;application/octet-stream&quot;;</span>
+
+<span class="nc" id="L411">        try (java.io.InputStream in = getContentResolver().openInputStream(uri);</span>
+<span class="nc" id="L412">             java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {</span>
+
+<span class="nc" id="L414">            byte[] buf = new byte[8192];</span>
+            int n;
+<span class="nc bnc" id="L416" title="All 2 branches missed.">            while ((n = in.read(buf)) &gt;= 0) bos.write(buf, 0, n);</span>
+<span class="nc" id="L417">            byte[] data = bos.toByteArray();</span>
+
+<span class="nc bnc" id="L419" title="All 2 branches missed.">            if (data.length &gt; 25 * 1024 * 1024) {</span>
+<span class="nc" id="L420">                toast(&quot;File exceeds 25MB limit&quot;);</span>
+<span class="nc" id="L421">                return;</span>
+            }
+
+<span class="nc" id="L424">            try (android.database.Cursor c = getContentResolver().query(uri, null, null, null, null)) {</span>
+<span class="nc bnc" id="L425" title="All 4 branches missed.">                if (c != null &amp;&amp; c.moveToFirst()) {</span>
+<span class="nc" id="L426">                    int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">                    if (idx &gt;= 0) fileName = c.getString(idx);</span>
+                }
+            }
+
+<span class="nc" id="L431">            String url = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/chat/attachment/upload&quot;;</span>
+
+<span class="nc" id="L433">            java.util.Map&lt;String, String&gt; headers = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L434">            String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L435" title="All 4 branches missed.">            if (access != null &amp;&amp; !access.isEmpty()) headers.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L436">            headers.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+
+<span class="nc" id="L438">            java.util.Map&lt;String, String&gt; fields = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L439">            fields.put(&quot;conversationId&quot;, conversationId);</span>
+<span class="nc" id="L440">            fields.put(&quot;content&quot;, text);</span>
+
+<span class="nc" id="L442">            java.util.Map&lt;String, com.project.saintcyshospital.net.MultipartFormRequest.FilePart&gt; files = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L443">            files.put(&quot;file&quot;, new com.project.saintcyshospital.net.MultipartFormRequest.FilePart(</span>
+                    fileName, mime, data
+            ));
+
+<span class="nc" id="L447">            String finalFileName = fileName;</span>
+<span class="nc" id="L448">            com.project.saintcyshospital.net.MultipartFormRequest req =</span>
+                    new com.project.saintcyshospital.net.MultipartFormRequest(
+                            com.android.volley.Request.Method.POST,
+                            url,
+                            headers,
+                            fields,
+                            files,
+                            resp -&gt; {
+<span class="nc" id="L456">                                toast(&quot;Attachment sent&quot;);</span>
+<span class="nc" id="L457">                                loadHistory();</span>
+<span class="nc" id="L458">                            },</span>
+                            err -&gt; {
+<span class="nc" id="L460">                                NetworkResponse nr = err.networkResponse;</span>
+<span class="nc bnc" id="L461" title="All 4 branches missed.">                                if (nr != null &amp;&amp; nr.data != null) {</span>
+<span class="nc" id="L462">                                    String body = new String(nr.data);</span>
+<span class="nc" id="L463">                                    toast(&quot;Upload failed: &quot; + nr.statusCode + &quot;\n&quot; + body);</span>
+<span class="nc" id="L464">                                } else {</span>
+<span class="nc" id="L465">                                    toast(&quot;Upload failed: &quot; + err.toString());</span>
+                                }
+<span class="nc" id="L467">                            }</span>
+                    );
+
+
+<span class="nc" id="L471">            VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        } catch (Exception e) {</span>
+<span class="nc" id="L474">            toast(&quot;Could not read file&quot;);</span>
+<span class="nc" id="L475">        }</span>
+<span class="nc" id="L476">    }</span>
+
+    private void downloadAttachment(long messageId, String preferredName) {
+<span class="nc" id="L479">        String url = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/chat/attachment/download/&quot; + messageId;</span>
+
+<span class="nc" id="L481">        java.util.Map&lt;String, String&gt; headers = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L482">        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L483" title="All 4 branches missed.">        if (access != null &amp;&amp; !access.isEmpty()) headers.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L484">        headers.put(&quot;Accept&quot;, &quot;*/*&quot;);</span>
+
+<span class="nc" id="L486">        com.project.saintcyshospital.net.ByteRequest req =</span>
+                new com.project.saintcyshospital.net.ByteRequest(
+                        com.android.volley.Request.Method.GET,
+                        url,
+                        headers,
+                        payload -&gt; {
+<span class="nc bnc" id="L492" title="All 6 branches missed.">                            if (payload == null || payload.data == null || payload.data.length == 0) {</span>
+<span class="nc" id="L493">                                toast(&quot;Empty file&quot;);</span>
+<span class="nc" id="L494">                                return;</span>
+                            }
+
+<span class="nc" id="L497">                            String mime = payload.headers.getOrDefault(&quot;Content-Type&quot;, &quot;application/octet-stream&quot;);</span>
+
+                            String name;
+<span class="nc bnc" id="L500" title="All 4 branches missed.">                            if (preferredName != null &amp;&amp; !preferredName.isEmpty()) {</span>
+<span class="nc" id="L501">                                name = preferredName;</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">                            } else if (mime.contains(&quot;png&quot;))       name = &quot;attachment.png&quot;;</span>
+<span class="nc bnc" id="L503" title="All 2 branches missed.">                            else if (mime.contains(&quot;jpeg&quot;))        name = &quot;attachment.jpg&quot;;</span>
+<span class="nc bnc" id="L504" title="All 2 branches missed.">                            else if (mime.contains(&quot;jpg&quot;))         name = &quot;attachment.jpg&quot;;</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">                            else if (mime.contains(&quot;gif&quot;))         name = &quot;attachment.gif&quot;;</span>
+<span class="nc bnc" id="L506" title="All 2 branches missed.">                            else if (mime.contains(&quot;pdf&quot;))         name = &quot;attachment.pdf&quot;;</span>
+<span class="nc" id="L507">                            else                                   name = &quot;attachment.bin&quot;;</span>
+
+
+                            try {
+<span class="nc" id="L511">                                File downloadsDir = Environment.getExternalStoragePublicDirectory(</span>
+                                        Environment.DIRECTORY_DOWNLOADS
+                                );
+
+<span class="nc" id="L515">                                File out = new File(downloadsDir, name);</span>
+
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                                if (out.exists()) {</span>
+<span class="nc" id="L518">                                    int dot = name.lastIndexOf('.');</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                                    String base = (dot == -1) ? name : name.substring(0, dot);</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">                                    String ext  = (dot == -1) ? &quot;&quot;   : name.substring(dot);</span>
+
+<span class="nc" id="L522">                                    int n = 1;</span>
+                                    File candidate;
+                                    do {
+<span class="nc" id="L525">                                        candidate = new File(downloadsDir, base + &quot; (&quot; + n + &quot;)&quot; + ext);</span>
+<span class="nc" id="L526">                                        n++;</span>
+<span class="nc bnc" id="L527" title="All 2 branches missed.">                                    } while (candidate.exists());</span>
+
+<span class="nc" id="L529">                                    out = candidate;</span>
+                                }
+
+<span class="nc" id="L532">                                try (FileOutputStream fos = new FileOutputStream(out)) {</span>
+<span class="nc" id="L533">                                    fos.write(payload.data);</span>
+                                }
+
+<span class="nc" id="L536">                                toast(&quot;File successfully saved to downloads.&quot;);</span>
+
+
+<span class="nc" id="L539">                            } catch (Exception e) {</span>
+<span class="nc" id="L540">                                toast(&quot;Failed to save file&quot;);</span>
+<span class="nc" id="L541">                            }</span>
+<span class="nc" id="L542">                        },</span>
+<span class="nc" id="L543">                        err -&gt; toast(&quot;Download failed&quot;)</span>
+                );
+
+<span class="nc" id="L546">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L547">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

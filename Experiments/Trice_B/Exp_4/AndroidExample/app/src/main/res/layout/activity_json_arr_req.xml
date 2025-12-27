@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">  <!-- Ensures the child fills the ScrollView -->
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">  <!-- Centers content horizontally -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textSize="30sp"
+            android:text="Response: "
+            android:textStyle="bold"
+            android:gravity="center" />  <!-- Centers text inside TextView -->
+
+        <TextView
+            android:id="@+id/msgResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:text=""
+            android:textSize="16sp"
+            android:gravity="center" />  <!-- Centers text -->
+
+        <Button
+            android:id="@+id/btnJsonArr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="JSON Array Request" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</ScrollView>

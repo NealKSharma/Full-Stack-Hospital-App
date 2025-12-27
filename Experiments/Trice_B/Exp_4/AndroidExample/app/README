@@ -1,0 +1,23 @@
+# Android App
+
+## Overview
+This is an Android application that demonstrates handling different types of network requests. The app includes buttons that trigger various activities to handle String requests, JSON object requests, JSON array requests, and image requests.
+
+## Features
+- String Request: Opens an activity that processes string-based network responses.
+- JSON Object Request: Opens an activity that handles a single JSON object response.
+- JSON Array Request: Opens an activity that processes an array of JSON objects.
+- Image Request: Opens an activity that fetches and displays an image from the internet.
+
+## Project Structure
+- MainActivity.java: The main activity that initializes buttons and handles click events.
+- StringReqActivity.java: Handles string-based network requests.
+- JsonObjReqActivity.java: Handles JSON object network requests.
+- JsonArrReqActivity.java: Handles JSON array network requests.
+- ImageReqActivity.java: Handles image fetching and display.
+
+## How to Run
+1. Click on code and download the file in your desired format.
+2. Open the project in **Android Studio**.
+3. Connect an Android device or start an emulator.
+4. Click on play button once the gradle build is completed.

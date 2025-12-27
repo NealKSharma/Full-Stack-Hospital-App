@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">ReportsActivity.java</span></div><h1>ReportsActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L23">public class ReportsActivity extends BaseActivity {</span>
+
+    private View tabTreatment, tabMeds, tabLabs;
+    private View panelTreatment, panelMeds, panelLabs;
+    private ListView listTreatment, listMeds, listLabs;
+    private ProgressBar progress;
+    private TextView errorText;
+
+    // Point this at your patient &quot;self&quot; endpoint:
+    // If your backend uses different paths, update this one line.
+    private static final String REPORTS_URL = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/reports/me&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L37">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L38">        setContentView(R.layout.activity_reports);</span>
+<span class="nc" id="L39">        setTitle(&quot;Reports&quot;);</span>
+
+        // Tabs
+<span class="nc" id="L42">        tabTreatment = findViewById(R.id.tab_treatment);</span>
+<span class="nc" id="L43">        tabMeds = findViewById(R.id.tab_meds);</span>
+<span class="nc" id="L44">        tabLabs = findViewById(R.id.tab_labs);</span>
+
+        // Panels
+<span class="nc" id="L47">        panelTreatment = findViewById(R.id.panel_treatment);</span>
+<span class="nc" id="L48">        panelMeds = findViewById(R.id.panel_medicines);</span>
+<span class="nc" id="L49">        panelLabs = findViewById(R.id.panel_labs);</span>
+
+        // Lists + status
+<span class="nc" id="L52">        listTreatment = findViewById(R.id.list_treatment);</span>
+<span class="nc" id="L53">        listMeds = findViewById(R.id.list_meds);</span>
+<span class="nc" id="L54">        listLabs = findViewById(R.id.list_labs);</span>
+<span class="nc" id="L55">        progress = findViewById(R.id.progress);</span>
+<span class="nc" id="L56">        errorText = findViewById(R.id.errorText);</span>
+
+        // Tab switching
+<span class="nc" id="L59">        View.OnClickListener show = v -&gt; {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            panelTreatment.setVisibility(v == tabTreatment ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            panelMeds.setVisibility(v == tabMeds ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            panelLabs.setVisibility(v == tabLabs ? View.VISIBLE : View.GONE);</span>
+<span class="nc" id="L63">        };</span>
+<span class="nc" id="L64">        tabTreatment.setOnClickListener(show);</span>
+<span class="nc" id="L65">        tabMeds.setOnClickListener(show);</span>
+<span class="nc" id="L66">        tabLabs.setOnClickListener(show);</span>
+
+<span class="nc" id="L68">        tabTreatment.performClick();</span>
+
+        // Gate: must be logged in
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (!AuthManager.isLoggedIn(this)) {</span>
+<span class="nc" id="L72">            startActivity(new Intent(this, LoginActivity.class));</span>
+<span class="nc" id="L73">            finish();</span>
+<span class="nc" id="L74">            return;</span>
+        }
+
+<span class="nc" id="L77">        fetchReports();</span>
+<span class="nc" id="L78">    }</span>
+
+    private void fetchReports() {
+<span class="nc" id="L81">        setLoading(true, null);</span>
+
+<span class="nc" id="L83">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                REPORTS_URL,
+                null,
+                response -&gt; {
+                    try {
+<span class="nc" id="L89">                        bindResponse(response);</span>
+<span class="nc" id="L90">                        setLoading(false, null);</span>
+<span class="nc" id="L91">                    } catch (JSONException e) {</span>
+<span class="nc" id="L92">                        setLoading(false, &quot;Parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L93">                    }</span>
+<span class="nc" id="L94">                },</span>
+                error -&gt; {
+                    // 401 -&gt; force login
+<span class="nc bnc" id="L97" title="All 6 branches missed.">                    if (error != null &amp;&amp; error.networkResponse != null</span>
+                            &amp;&amp; error.networkResponse.statusCode == 401) {
+<span class="nc" id="L99">                        AuthManager.clear(ReportsActivity.this);</span>
+<span class="nc" id="L100">                        startActivity(new Intent(ReportsActivity.this, LoginActivity.class));</span>
+<span class="nc" id="L101">                        finish();</span>
+<span class="nc" id="L102">                        return;</span>
+                    }
+<span class="nc" id="L104">                    setLoading(false, &quot;Failed to load reports&quot;);</span>
+<span class="nc" id="L105">                }</span>
+<span class="nc" id="L106">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() throws AuthFailureError {
+<span class="nc" id="L109">                Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L110">                String token = AuthManager.getAccessToken(ReportsActivity.this);</span>
+<span class="nc bnc" id="L111" title="All 4 branches missed.">                if (token != null &amp;&amp; !token.isEmpty()) {</span>
+<span class="nc" id="L112">                    h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + token);</span>
+                }
+<span class="nc" id="L114">                h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L115">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L119">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L120">    }</span>
+
+    private void bindResponse(JSONObject json) throws JSONException {
+        // Expected JSON (adjust if yours differs):
+        // {
+        //   &quot;treatmentPlan&quot;: [&quot;Step 1 ...&quot;, &quot;Step 2 ...&quot;],
+        //   &quot;medicines&quot;: [ { &quot;name&quot;:&quot;Amoxicillin&quot;, &quot;dose&quot;:&quot;500mg&quot;, &quot;freq&quot;:&quot;2x/day&quot; }, ... ],
+        //   &quot;labs&quot;: [ { &quot;title&quot;:&quot;CBC&quot;, &quot;value&quot;:&quot;Normal&quot;, &quot;date&quot;:&quot;2025-05-01&quot; }, ... ]
+        // }
+
+        // Treatment
+<span class="nc" id="L131">        ArrayList&lt;String&gt; tItems = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L132">        JSONArray tArr = json.optJSONArray(&quot;treatmentPlan&quot;);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (tArr != null) {</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            for (int i = 0; i &lt; tArr.length(); i++) tItems.add(tArr.optString(i));</span>
+        }
+<span class="nc" id="L136">        listTreatment.setAdapter(new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, tItems));</span>
+
+        // Medicines
+<span class="nc" id="L139">        ArrayList&lt;String&gt; mItems = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L140">        JSONArray mArr = json.optJSONArray(&quot;medicines&quot;);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (mArr != null) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            for (int i = 0; i &lt; mArr.length(); i++) {</span>
+<span class="nc" id="L143">                JSONObject m = mArr.optJSONObject(i);</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                if (m != null) {</span>
+<span class="nc" id="L145">                    String name = m.optString(&quot;name&quot;);</span>
+<span class="nc" id="L146">                    String dose = m.optString(&quot;dose&quot;);</span>
+<span class="nc" id="L147">                    String freq = m.optString(&quot;freq&quot;);</span>
+<span class="nc" id="L148">                    mItems.add(name</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                            + (dose.isEmpty() ? &quot;&quot; : &quot; • &quot; + dose)</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                            + (freq.isEmpty() ? &quot;&quot; : &quot; • &quot; + freq));</span>
+                }
+            }
+        }
+<span class="nc" id="L154">        listMeds.setAdapter(new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, mItems));</span>
+
+        // Labs
+<span class="nc" id="L157">        ArrayList&lt;String&gt; lItems = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L158">        JSONArray lArr = json.optJSONArray(&quot;labs&quot;);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (lArr != null) {</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            for (int i = 0; i &lt; lArr.length(); i++) {</span>
+<span class="nc" id="L161">                JSONObject l = lArr.optJSONObject(i);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (l != null) {</span>
+<span class="nc" id="L163">                    String title = l.optString(&quot;title&quot;);</span>
+<span class="nc" id="L164">                    String val = l.optString(&quot;value&quot;);</span>
+<span class="nc" id="L165">                    String date = l.optString(&quot;date&quot;);</span>
+<span class="nc" id="L166">                    lItems.add(title</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                            + (val.isEmpty() ? &quot;&quot; : &quot; • &quot; + val)</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                            + (date.isEmpty() ? &quot;&quot; : &quot; • &quot; + date));</span>
+                }
+            }
+        }
+<span class="nc" id="L172">        listLabs.setAdapter(new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, lItems));</span>
+<span class="nc" id="L173">    }</span>
+
+    private void setLoading(boolean loading, String error) {
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        progress.setVisibility(loading ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        errorText.setVisibility(error != null &amp;&amp; !error.isEmpty() ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (error != null) errorText.setText(error);</span>
+<span class="nc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Main content -->
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <TextView
+            android:id="@+id/doctor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Patient Histories"
+            android:textStyle="bold"
+            android:textSize="24sp"
+            android:paddingBottom="8dp" />
+
+        <EditText
+            android:id="@+id/searchPatients"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search by name or MRN"
+            android:padding="10dp"
+            android:layout_marginTop="8dp" />
+
+        <!-- Divider line (optional) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="#33000000" />
+
+        <!-- List of patients; this scrolls, so no ScrollView needed -->
+        <ListView
+            android:id="@+id/patientList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="0.5dp" />
+
+    </LinearLayout>
+
+    <!-- Bottom navigation, flush with bottom edge -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        style="@style/MyBottomNav"
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:background="@color/saint_red"
+        app:itemIconSize="32dp"
+        app:itemPaddingTop="0dp"
+        app:itemPaddingBottom="0dp"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:labelVisibilityMode="unlabeled"
+        app:menu="@menu/bottom_nav_menu" />
+
+    <!-- Slide-up "More" menu overlay -->
+    <com.project.saintcyshospital.MoreMenuLayout
+        android:id="@+id/moreMenu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/inAppNotifBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="@color/saint_red"
+        android:visibility="gone"
+        android:elevation="8dp">
+
+        <TextView
+            android:layout_marginTop="18dp"
+            android:id="@+id/inAppNotifTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hospital update"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/inAppNotifBody"
+            android:layout_marginBottom="18dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="You have a new notification."
+            android:textSize="16sp"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+</FrameLayout>

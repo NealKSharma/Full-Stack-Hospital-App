@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+android:layout_width="match_parent"
+android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@android:color/white">
+
+        <LinearLayout
+            android:id="@+id/messages_header"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="@android:color/white">
+
+            <TextView
+                android:id="@+id/header_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Messages"
+                android:textColor="#111111"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btn_new_message"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_new_chat"
+                android:contentDescription="New Chat"
+                app:tint="@color/saint_red"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"/>
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/messages_search"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_search_bar"
+            android:hint="Search"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="8dp"
+            android:textSize="14sp"
+            android:drawableStart="@drawable/ic_search_glass"
+            android:drawablePadding="12dp" />
+
+        <ListView
+            android:id="@+id/chat_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="12dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"/>
+    </LinearLayout>
+
+
+<com.google.android.material.bottomnavigation.BottomNavigationView
+    style="@style/MyBottomNav"
+    android:id="@+id/bottomNav"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:layout_gravity="bottom"
+    app:itemIconSize="32dp"
+    app:itemPaddingTop="0dp"
+    app:itemPaddingBottom="0dp"
+    android:background="@color/saint_red"
+    app:itemIconTint="@color/bottom_nav_item_color"
+    app:itemTextColor="@color/bottom_nav_item_color"
+    app:labelVisibilityMode="unlabeled"
+    app:menu="@menu/bottom_nav_menu"
+    />
+
+<com.project.saintcyshospital.MoreMenuLayout
+    android:id="@+id/moreMenu"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/inAppNotifBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="@color/saint_red"
+        android:visibility="gone"
+        android:elevation="8dp">
+
+        <TextView
+            android:layout_marginTop="18dp"
+            android:id="@+id/inAppNotifTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hospital update"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/inAppNotifBody"
+            android:layout_marginBottom="18dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="You have a new notification."
+            android:textSize="16sp"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+</FrameLayout>
+
+
+
+

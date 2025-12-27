@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">NotificationsActivity.java</span></div><h1>NotificationsActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+<span class="nc" id="L23">public class NotificationsActivity extends BaseActivity {</span>
+
+    private static final String URL_NOTIF_LIST = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/notifications&quot;;
+<span class="nc" id="L26">    private final ArrayList&lt;String&gt; messages = new ArrayList&lt;&gt;();</span>
+    private ArrayAdapter&lt;String&gt; adapter;
+
+<span class="nc" id="L29">    private final BroadcastReceiver wsReceiver = new BroadcastReceiver() {</span>
+        @Override public void onReceive(Context context, Intent intent) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            if (com.project.saintcyshospital.ws.WsHub.ACTION_WS_MESSAGE.equals(intent.getAction())) {</span>
+<span class="nc" id="L32">                String text = intent.getStringExtra(com.project.saintcyshospital.ws.WsHub.EXTRA_TEXT);</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">                if (text != null) {</span>
+<span class="nc" id="L34">                    messages.add(text);</span>
+<span class="nc" id="L35">                    adapter.notifyDataSetChanged();</span>
+                }
+            }
+<span class="nc" id="L38">        }</span>
+    };
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L42">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L43">        setContentView(R.layout.activity_notifications);</span>
+<span class="nc" id="L44">        setupBottomNav(0);</span>
+
+<span class="nc" id="L46">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L48">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L49">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L50">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L51">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L53">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L54">            return insets;</span>
+        });
+
+<span class="nc" id="L57">        ListView list = findViewById(R.id.msg_list);</span>
+<span class="nc" id="L58">        adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, messages);</span>
+<span class="nc" id="L59">        list.setAdapter(adapter);</span>
+
+<span class="nc" id="L61">        fetchPastNotifications();</span>
+<span class="nc" id="L62">    }</span>
+
+    @Override protected void onStart() {
+<span class="nc" id="L65">        super.onStart();</span>
+<span class="nc" id="L66">        android.content.IntentFilter f =</span>
+                new android.content.IntentFilter(com.project.saintcyshospital.ws.WsHub.ACTION_WS_MESSAGE);
+<span class="nc" id="L68">        androidx.core.content.ContextCompat.registerReceiver(</span>
+                this,
+                wsReceiver,
+                f,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+<span class="nc" id="L74">    }</span>
+
+    @Override protected void onStop() {
+<span class="nc" id="L77">        unregisterReceiver(wsReceiver);</span>
+<span class="nc" id="L78">        super.onStop();</span>
+<span class="nc" id="L79">    }</span>
+
+    private void fetchPastNotifications() {
+<span class="nc" id="L82">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                URL_NOTIF_LIST,
+                null,
+                this::handlePastNotifsResponse,
+<span class="nc" id="L87">                (VolleyError error) -&gt; handleVolleyAuthError(error, this::fetchPastNotifications)</span>
+<span class="nc" id="L88">        ) {</span>
+            @Override
+            public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L91">                java.util.Map&lt;String, String&gt; h = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L92">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L93" title="All 4 branches missed.">                if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L94">                    h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+                }
+<span class="nc" id="L96">                h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L97">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L101">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L102">    }</span>
+
+    private void handlePastNotifsResponse(JSONArray resp) {
+<span class="nc" id="L105">        messages.clear();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L107">            JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (o == null) continue;</span>
+
+<span class="nc" id="L110">            String title = o.optString(&quot;title&quot;, &quot;&quot;);</span>
+<span class="nc" id="L111">            String desc  = o.optString(&quot;content&quot;, &quot;&quot;);</span>
+
+            String line;
+<span class="nc bnc" id="L114" title="All 4 branches missed.">            if (!title.isEmpty() &amp;&amp; !desc.isEmpty()) {</span>
+<span class="nc" id="L115">                line = title + &quot; - &quot; + desc;</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            } else if (!title.isEmpty()) {</span>
+<span class="nc" id="L117">                line = title;</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            } else if (!desc.isEmpty()) {</span>
+<span class="nc" id="L119">                line = desc;</span>
+            } else {
+<span class="nc" id="L121">                line = &quot;(no content)&quot;;</span>
+            }
+
+<span class="nc" id="L124">            messages.add(line);</span>
+        }
+<span class="nc" id="L126">        adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L127">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

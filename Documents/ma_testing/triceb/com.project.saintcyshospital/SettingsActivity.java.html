@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SettingsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">SettingsActivity.java</span></div><h1>SettingsActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.project.saintcyshospital.ws.WsHub;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L25">public class SettingsActivity extends BaseActivity {</span>
+
+    private static final String PREFS = &quot;auth_prefs&quot;;
+    private static final String KEY_LAST_USER = &quot;last_user&quot;;
+    private static final String KEY_LAST_EMAIL = &quot;last_email&quot;;
+
+    private static final String URL_ME_PUT   = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/user/update&quot;;
+    private static final String URL_ME_DELETE= &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/user/delete&quot;;
+
+    private EditText etUser, etEmail, etPass;
+    private Button btnEdit, btnSave, btnDelete;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L39">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L40">        setContentView(R.layout.activity_settings);</span>
+<span class="nc" id="L41">        setupBottomNav(0);</span>
+
+<span class="nc" id="L43">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L45">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L46">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L47">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L48">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L50">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L51">            return insets;</span>
+        });
+
+<span class="nc" id="L54">        etUser = findViewById(R.id.pi_username);</span>
+<span class="nc" id="L55">        etEmail= findViewById(R.id.pi_email);</span>
+<span class="nc" id="L56">        etPass = findViewById(R.id.pi_password);</span>
+<span class="nc" id="L57">        btnEdit= findViewById(R.id.pi_edit_btn);</span>
+<span class="nc" id="L58">        btnSave= findViewById(R.id.pi_save_btn);</span>
+<span class="nc" id="L59">        btnDelete = findViewById(R.id.pi_delete_btn);</span>
+
+<span class="nc" id="L61">        String username = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_LAST_USER, &quot;&quot;);</span>
+<span class="nc" id="L62">        String email    = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_LAST_EMAIL, &quot;&quot;);</span>
+<span class="nc" id="L63">        etUser.setText(username);</span>
+<span class="nc" id="L64">        etEmail.setText(email);</span>
+<span class="nc" id="L65">        etPass.setText(&quot;&quot;);</span>
+
+<span class="nc" id="L67">        btnEdit.setOnClickListener(v -&gt; setEditing(true));</span>
+<span class="nc" id="L68">        btnSave.setOnClickListener(v -&gt; doSave());</span>
+<span class="nc" id="L69">        btnDelete.setOnClickListener(v -&gt; confirmDelete());</span>
+<span class="nc" id="L70">    }</span>
+
+    private void setEditing(boolean editing) {
+<span class="nc" id="L73">        etUser.setEnabled(editing);</span>
+<span class="nc" id="L74">        etEmail.setEnabled(editing);</span>
+<span class="nc" id="L75">        etPass.setEnabled(editing);</span>
+<span class="nc" id="L76">        btnSave.setEnabled(editing);</span>
+<span class="nc" id="L77">    }</span>
+
+    private void doSave() {
+<span class="nc" id="L80">        btnSave.setEnabled(false);</span>
+
+<span class="nc" id="L82">        String newUser = etUser.getText().toString().trim();</span>
+<span class="nc" id="L83">        String newEmail= etEmail.getText().toString().trim();</span>
+<span class="nc" id="L84">        String newPass = etPass.getText().toString();</span>
+
+<span class="nc" id="L86">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L88">            body.put(&quot;username&quot;, newUser);</span>
+<span class="nc" id="L89">            body.put(&quot;email&quot;, newEmail);</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (!newPass.isEmpty()) body.put(&quot;password&quot;, newPass);</span>
+<span class="nc" id="L91">        } catch (JSONException ignored) {}</span>
+
+<span class="nc" id="L93">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                URL_ME_PUT,
+                body,
+                resp -&gt; {
+<span class="nc" id="L98">                    getSharedPreferences(PREFS, MODE_PRIVATE)</span>
+<span class="nc" id="L99">                            .edit()</span>
+<span class="nc" id="L100">                            .putString(KEY_LAST_USER, newUser)</span>
+<span class="nc" id="L101">                            .putString(KEY_LAST_EMAIL, newEmail)</span>
+<span class="nc" id="L102">                            .apply();</span>
+
+<span class="nc" id="L104">                    Toast.makeText(getApplicationContext(), &quot;Saved&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L105">                    setEditing(false);</span>
+<span class="nc" id="L106">                    btnSave.setEnabled(true);</span>
+<span class="nc" id="L107">                    etPass.setText(&quot;&quot;);</span>
+<span class="nc" id="L108">                },</span>
+<span class="nc" id="L109">                (VolleyError error) -&gt; handleVolleyAuthError(error, () -&gt; {</span>
+<span class="nc" id="L110">                    btnSave.setEnabled(true);</span>
+<span class="nc" id="L111">                    doSave();</span>
+<span class="nc" id="L112">                })</span>
+<span class="nc" id="L113">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L116">                Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L117">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L119">                h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L120">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L124">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L125">    }</span>
+
+    private void confirmDelete() {
+<span class="nc" id="L128">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L129">                .setTitle(&quot;Delete Account&quot;)</span>
+<span class="nc" id="L130">                .setMessage(&quot;This will permanently remove your account. Continue?&quot;)</span>
+<span class="nc" id="L131">                .setPositiveButton(&quot;Delete&quot;, (d, w) -&gt; doDelete())</span>
+<span class="nc" id="L132">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L133">                .show();</span>
+<span class="nc" id="L134">    }</span>
+
+    private void doDelete() {
+<span class="nc" id="L137">        StringRequest req = new StringRequest(</span>
+                Request.Method.DELETE,
+                URL_ME_DELETE,
+                resp -&gt; {
+<span class="nc" id="L141">                    Toast.makeText(getApplicationContext(), &quot;Account deleted&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L142">                    WsHub.get().stop();</span>
+<span class="nc" id="L143">                    AuthManager.clear(getApplicationContext());</span>
+<span class="nc" id="L144">                    Intent i = new Intent(SettingsActivity.this, HomeActivity.class);</span>
+<span class="nc" id="L145">                    startActivity(i);</span>
+<span class="nc" id="L146">                },</span>
+<span class="nc" id="L147">                (VolleyError error) -&gt; handleVolleyAuthError(error, () -&gt; doDelete())</span>
+<span class="nc" id="L148">        ) {</span>
+            @Override
+            public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L151">                Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L152">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L154">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L158">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L159">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckoutActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">CheckoutActivity.java</span></div><h1>CheckoutActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.core.view.ViewCompat;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
+
+<span class="nc" id="L14">public class CheckoutActivity extends BaseActivity {</span>
+
+    private TextInputEditText nameInput, numberInput, expiryInput, cvcInput, zipInput;
+    private TextView totalTxt;
+    private Button placeOrderBtn;
+    private static final String URL_CHECKOUT =
+            &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/pharmacy/orders/place&quot;;
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L23">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L24">        setContentView(R.layout.activity_checkout);</span>
+<span class="nc" id="L25">        setupBottomNav(0);</span>
+
+<span class="nc" id="L27">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L29">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L30">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L31">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L32">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L34">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L35">            return insets;</span>
+        });
+
+<span class="nc" id="L38">        CartStore.get().init(getApplicationContext());</span>
+
+<span class="nc" id="L40">        nameInput   = findViewById(R.id.input_card_name);</span>
+<span class="nc" id="L41">        numberInput = findViewById(R.id.input_card_number);</span>
+<span class="nc" id="L42">        expiryInput = findViewById(R.id.input_card_expiry);</span>
+<span class="nc" id="L43">        cvcInput    = findViewById(R.id.input_card_cvc);</span>
+<span class="nc" id="L44">        zipInput    = findViewById(R.id.input_card_zip);</span>
+<span class="nc" id="L45">        totalTxt    = findViewById(R.id.checkout_total_txt);</span>
+<span class="nc" id="L46">        placeOrderBtn = findViewById(R.id.place_order_btn);</span>
+
+<span class="nc" id="L48">        totalTxt.setText(String.format(&quot;Total: $%.2f&quot;, CartStore.get().totalCents() / 100.0));</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        placeOrderBtn.setEnabled(CartStore.get().totalCents() &gt; 0);</span>
+
+<span class="nc" id="L51">        placeOrderBtn.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (!basicValidate()) {</span>
+<span class="nc" id="L53">                Toast.makeText(this, &quot;Please complete all fields.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L54">                return;</span>
+            }
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (CartStore.get().totalCents() &lt;= 0) {</span>
+<span class="nc" id="L57">                Toast.makeText(this, &quot;Your cart is empty.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L58">                return;</span>
+            }
+<span class="nc" id="L60">            submitOrder();</span>
+<span class="nc" id="L61">        });</span>
+
+<span class="nc" id="L63">    }</span>
+
+    private boolean basicValidate() {
+<span class="nc bnc" id="L66" title="All 4 branches missed.">        return notEmpty(nameInput) &amp;&amp; notEmpty(numberInput)</span>
+<span class="nc bnc" id="L67" title="All 6 branches missed.">                &amp;&amp; notEmpty(expiryInput) &amp;&amp; notEmpty(cvcInput) &amp;&amp; notEmpty(zipInput);</span>
+    }
+
+    private boolean notEmpty(TextInputEditText e) {
+<span class="nc bnc" id="L71" title="All 4 branches missed.">        return e.getText() != null &amp;&amp; e.getText().toString().trim().length() &gt; 0;</span>
+    }
+
+    private void submitOrder() {
+<span class="nc" id="L75">        long totalCents = CartStore.get().totalCents();</span>
+
+<span class="nc" id="L77">        org.json.JSONObject body = new org.json.JSONObject();</span>
+        try {
+<span class="nc" id="L79">            body.put(&quot;cardName&quot;, safeText(nameInput));</span>
+<span class="nc" id="L80">            body.put(&quot;cardNumber&quot;, safeText(numberInput));</span>
+<span class="nc" id="L81">            body.put(&quot;cardExpiry&quot;, safeText(expiryInput));</span>
+<span class="nc" id="L82">            body.put(&quot;cardCvc&quot;, safeText(cvcInput));</span>
+<span class="nc" id="L83">            body.put(&quot;zip&quot;, safeText(zipInput));</span>
+<span class="nc" id="L84">            body.put(&quot;totalCents&quot;, totalCents);</span>
+
+<span class="nc" id="L86">            org.json.JSONArray itemsArr = new org.json.JSONArray();</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            for (CartStore.CartItem ci : CartStore.get().items()) {</span>
+<span class="nc" id="L89">                org.json.JSONObject ji = new org.json.JSONObject();</span>
+<span class="nc" id="L90">                ji.put(&quot;medicineId&quot;, ci.medicine.id);</span>
+<span class="nc" id="L91">                ji.put(&quot;name&quot;, ci.medicine.name);</span>
+<span class="nc" id="L92">                ji.put(&quot;genericName&quot;, ci.medicine.genericName);</span>
+<span class="nc" id="L93">                ji.put(&quot;dosage&quot;, ci.medicine.dosage);</span>
+<span class="nc" id="L94">                ji.put(&quot;priceCents&quot;, ci.medicine.priceCents);</span>
+<span class="nc" id="L95">                ji.put(&quot;quantity&quot;, ci.qty);</span>
+<span class="nc" id="L96">                itemsArr.put(ji);</span>
+<span class="nc" id="L97">            }</span>
+
+<span class="nc" id="L99">            body.put(&quot;items&quot;, itemsArr);</span>
+<span class="nc" id="L100">        } catch (org.json.JSONException ignored) {}</span>
+
+<span class="nc" id="L102">        com.android.volley.toolbox.JsonObjectRequest req =</span>
+                new com.android.volley.toolbox.JsonObjectRequest(
+                        com.android.volley.Request.Method.POST,
+                        URL_CHECKOUT,
+                        body,
+                        resp -&gt; {
+<span class="nc" id="L108">                            Toast.makeText(getApplicationContext(),</span>
+                                    &quot;Order placed successfully.&quot;,
+<span class="nc" id="L110">                                    Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L111">                            CartStore.get().clear();</span>
+<span class="nc" id="L112">                            Intent i = new Intent(this, HomeActivity.class);</span>
+<span class="nc" id="L113">                            startActivity(i);</span>
+<span class="nc" id="L114">                            finish();</span>
+<span class="nc" id="L115">                        },</span>
+<span class="nc" id="L116">                        err -&gt; handleVolleyAuthError(err, this::submitOrder)</span>
+<span class="nc" id="L117">                ) {</span>
+                    @Override
+                    public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L120">                        java.util.Map&lt;String, String&gt; h = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L121">                        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L122" title="All 4 branches missed.">                        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L123">                            h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+                        }
+<span class="nc" id="L125">                        h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L126">                        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L127">                        return h;</span>
+                    }
+                };
+
+<span class="nc" id="L131">        VolleySingleton</span>
+<span class="nc" id="L132">                .getInstance(getApplicationContext())</span>
+<span class="nc" id="L133">                .addToRequestQueue(req);</span>
+<span class="nc" id="L134">    }</span>
+
+    private String safeText(TextInputEditText e) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        return (e.getText() != null) ? e.getText().toString().trim() : &quot;&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DoctorPrescriptionsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">DoctorPrescriptionsActivity.java</span></div><h1>DoctorPrescriptionsActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.os.Bundle;
+import android.text.InputType;
+import android.view.ViewGroup;
+import android.widget.*;
+import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L24">public class DoctorPrescriptionsActivity extends BaseActivity {</span>
+
+    private ArrayAdapter&lt;Prescription&gt; adapter;
+<span class="nc" id="L27">    private final ArrayList&lt;Prescription&gt; data = new ArrayList&lt;&gt;();</span>
+
+    private static final String BASE_API = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev&quot;;
+    private static final String URL_PRESC_LIST = BASE_API + &quot;/api/doctor/prescriptions&quot;;
+    private static final String URL_PRESC_WRITE = BASE_API + &quot;/api/doctor/prescriptions&quot;;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L35">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L36">        setContentView(R.layout.activity_doctor_prescriptions);</span>
+<span class="nc" id="L37">        setupBottomNav(0);</span>
+
+<span class="nc" id="L39">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L41">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L42">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L43">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L44">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L46">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L47">            return insets;</span>
+        });
+
+<span class="nc" id="L50">        ListView list = findViewById(R.id.prescriptionList);</span>
+<span class="nc" id="L51">        EditText search = findViewById(R.id.searchPrescriptions);</span>
+<span class="nc" id="L52">        Button newBtn = findViewById(R.id.btnNewPrescription);</span>
+
+<span class="nc" id="L54">        adapter = new ArrayAdapter&lt;Prescription&gt;(this, android.R.layout.simple_list_item_2, android.R.id.text1, data) {</span>
+            @Override
+            public android.view.View getView(int position, android.view.View convertView, ViewGroup parent) {
+<span class="nc" id="L57">                android.view.View v = super.getView(position, convertView, parent);</span>
+<span class="nc" id="L58">                Prescription p = getItem(position);</span>
+
+<span class="nc bnc" id="L60" title="All 4 branches missed.">                String patientLabel = (p.patientUsername != null &amp;&amp; !p.patientUsername.isEmpty())</span>
+<span class="nc" id="L61">                        ? p.patientUsername</span>
+<span class="nc" id="L62">                        : &quot;Unknown patient&quot;;</span>
+
+<span class="nc" id="L64">                ((TextView) v.findViewById(android.R.id.text1)).setText(</span>
+                        p.drug + &quot; • &quot; + p.dosage + &quot;  (&quot; + patientLabel + &quot;)&quot;
+                );
+
+<span class="nc bnc" id="L68" title="All 4 branches missed.">                String created = (p.createdAt != null &amp;&amp; !p.createdAt.isEmpty()) ? p.createdAt : &quot;—&quot;;</span>
+<span class="nc" id="L69">                String refillInfo = &quot;Refills: &quot; + p.refillAmount;</span>
+
+<span class="nc" id="L71">                ((TextView) v.findViewById(android.R.id.text2)).setText(</span>
+                        created + &quot;  •  &quot; + p.directions + &quot;  •  &quot; + refillInfo
+                );
+
+<span class="nc" id="L75">                return v;</span>
+            }
+        };
+
+<span class="nc" id="L79">        list.setAdapter(adapter);</span>
+
+<span class="nc" id="L81">        search.addTextChangedListener(new android.text.TextWatcher() {</span>
+<span class="nc" id="L82">            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}</span>
+<span class="nc" id="L83">            @Override public void onTextChanged(CharSequence s, int st, int b, int c) { adapter.getFilter().filter(s); }</span>
+<span class="nc" id="L84">            @Override public void afterTextChanged(android.text.Editable s) {}</span>
+        });
+
+<span class="nc" id="L87">        newBtn.setOnClickListener(v -&gt; promptNewPrescription());</span>
+
+<span class="nc" id="L89">        fetchPrescriptions();</span>
+<span class="nc" id="L90">    }</span>
+
+    private Map&lt;String, String&gt; buildHeaders(boolean hasJsonBody) {
+<span class="nc" id="L93">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L95">        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L97">            h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+        }
+
+<span class="nc" id="L100">        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (hasJsonBody) {</span>
+<span class="nc" id="L103">            h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+        }
+
+<span class="nc" id="L106">        return h;</span>
+    }
+
+    private void fetchPrescriptions() {
+<span class="nc" id="L110">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET, URL_PRESC_LIST, null,
+                (JSONArray resp) -&gt; {
+<span class="nc" id="L113">                    data.clear();</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L115">                        JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                        if (o == null) continue;</span>
+<span class="nc" id="L117">                        Prescription p = new Prescription();</span>
+<span class="nc" id="L118">                        p.id = o.optLong(&quot;id&quot;, 0);</span>
+
+<span class="nc" id="L120">                        JSONObject patientObj = o.optJSONObject(&quot;patient&quot;);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                        if (patientObj != null) {</span>
+<span class="nc" id="L122">                            p.patientUsername = patientObj.optString(&quot;name&quot;, null);</span>
+                        } else {
+<span class="nc" id="L124">                            p.patientUsername = o.optString(&quot;patientUsername&quot;, null);</span>
+                        }
+
+<span class="nc" id="L127">                        p.drug = o.optString(&quot;medication&quot;, &quot;&quot;);</span>
+<span class="nc" id="L128">                        p.dosage = o.optString(&quot;dosage&quot;, &quot;&quot;);</span>
+<span class="nc" id="L129">                        p.directions = o.optString(&quot;notes&quot;, &quot;&quot;);</span>
+<span class="nc" id="L130">                        p.createdAt = o.optString(&quot;createdAt&quot;, null);</span>
+<span class="nc" id="L131">                        p.refillAmount = o.optInt(&quot;refill&quot;, 0);</span>
+
+<span class="nc" id="L133">                        data.add(p);</span>
+                    }
+<span class="nc" id="L135">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L136">                },</span>
+<span class="nc" id="L137">                (VolleyError error) -&gt; handleVolleyAuthError(error, this::fetchPrescriptions)</span>
+<span class="nc" id="L138">        ) {</span>
+            @Override public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L140">                return buildHeaders(false);</span>
+            }
+        };
+
+<span class="nc" id="L144">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L145">    }</span>
+
+    private void promptNewPrescription() {
+<span class="nc" id="L148">        LinearLayout root = new LinearLayout(this);</span>
+<span class="nc" id="L149">        root.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L150">        int pad = (int) (16 * getResources().getDisplayMetrics().density);</span>
+<span class="nc" id="L151">        root.setPadding(pad, pad, pad, pad);</span>
+
+        // Username only (no patient ID)
+<span class="nc" id="L154">        final EditText etUsername = new EditText(this);</span>
+<span class="nc" id="L155">        etUsername.setHint(&quot;Patient Username (required)&quot;);</span>
+<span class="nc" id="L156">        etUsername.setInputType(InputType.TYPE_CLASS_TEXT);</span>
+
+<span class="nc" id="L158">        final EditText etDrug = new EditText(this);</span>
+<span class="nc" id="L159">        etDrug.setHint(&quot;Drug&quot;);</span>
+<span class="nc" id="L160">        etDrug.setInputType(InputType.TYPE_CLASS_TEXT);</span>
+
+<span class="nc" id="L162">        final EditText etDosage = new EditText(this);</span>
+<span class="nc" id="L163">        etDosage.setHint(&quot;Dosage (e.g., 10 mg)&quot;);</span>
+<span class="nc" id="L164">        etDosage.setInputType(InputType.TYPE_CLASS_TEXT);</span>
+
+<span class="nc" id="L166">        final EditText etDirections = new EditText(this);</span>
+<span class="nc" id="L167">        etDirections.setHint(&quot;Directions (SIG)&quot;);</span>
+<span class="nc" id="L168">        etDirections.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);</span>
+
+<span class="nc" id="L170">        final EditText etRefill = new EditText(this);</span>
+<span class="nc" id="L171">        etRefill.setHint(&quot;Refill amount (leave blank for 0)&quot;);</span>
+<span class="nc" id="L172">        etRefill.setInputType(InputType.TYPE_CLASS_NUMBER);</span>
+
+<span class="nc" id="L174">        root.addView(etUsername);</span>
+<span class="nc" id="L175">        root.addView(etDrug);</span>
+<span class="nc" id="L176">        root.addView(etDosage);</span>
+<span class="nc" id="L177">        root.addView(etDirections);</span>
+<span class="nc" id="L178">        root.addView(etRefill);</span>
+
+<span class="nc" id="L180">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L181">                .setTitle(&quot;Write Prescription&quot;)</span>
+<span class="nc" id="L182">                .setView(root)</span>
+<span class="nc" id="L183">                .setPositiveButton(&quot;Submit&quot;, (d, w) -&gt; {</span>
+<span class="nc" id="L184">                    String drug = etDrug.getText().toString().trim();</span>
+<span class="nc" id="L185">                    String dosage = etDosage.getText().toString().trim();</span>
+<span class="nc" id="L186">                    String directions = etDirections.getText().toString().trim();</span>
+<span class="nc" id="L187">                    String username = etUsername.getText().toString().trim();</span>
+<span class="nc" id="L188">                    String refillStr = etRefill.getText().toString().trim();</span>
+
+<span class="nc bnc" id="L190" title="All 6 branches missed.">                    if (drug.isEmpty() || dosage.isEmpty() || directions.isEmpty()) {</span>
+<span class="nc" id="L191">                        Toast.makeText(getApplicationContext(), &quot;Fill drug, dosage, and directions&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L192">                        return;</span>
+                    }
+
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                    if (username.isEmpty()) {</span>
+<span class="nc" id="L196">                        Toast.makeText(getApplicationContext(), &quot;Provide patient username&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L197">                        return;</span>
+                    }
+
+<span class="nc" id="L200">                    int refillAmount = 0;</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                    if (!refillStr.isEmpty()) {</span>
+                        try {
+<span class="nc" id="L203">                            refillAmount = Integer.parseInt(refillStr);</span>
+<span class="nc" id="L204">                        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L205">                            Toast.makeText(getApplicationContext(), &quot;Refill amount must be a valid number&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L206">                            return;</span>
+<span class="nc" id="L207">                        }</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                        if (refillAmount &lt;= 0) {</span>
+<span class="nc" id="L210">                            Toast.makeText(getApplicationContext(), &quot;Refill amount must be positive or left blank&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L211">                            return;</span>
+                        }
+                    }
+
+<span class="nc" id="L215">                    JSONObject body = new JSONObject();</span>
+                    try {
+<span class="nc" id="L217">                        body.put(&quot;patientUsername&quot;, username);</span>
+<span class="nc" id="L218">                        body.put(&quot;medication&quot;, drug);</span>
+<span class="nc" id="L219">                        body.put(&quot;dosage&quot;, dosage);</span>
+<span class="nc" id="L220">                        body.put(&quot;notes&quot;, directions);</span>
+<span class="nc" id="L221">                        body.put(&quot;refill&quot;, refillAmount);</span>
+<span class="nc" id="L222">                    } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L224">                    submitPrescription(body);</span>
+<span class="nc" id="L225">                })</span>
+<span class="nc" id="L226">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L227">                .show();</span>
+<span class="nc" id="L228">    }</span>
+
+    private void submitPrescription(JSONObject body) {
+<span class="nc" id="L231">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.POST, URL_PRESC_WRITE, body,
+                resp -&gt; {
+<span class="nc" id="L234">                    Toast.makeText(getApplicationContext(), &quot;Prescription submitted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L235">                    fetchPrescriptions();</span>
+<span class="nc" id="L236">                },</span>
+<span class="nc" id="L237">                (VolleyError err) -&gt; handleVolleyAuthError(err, () -&gt; submitPrescription(body))</span>
+<span class="nc" id="L238">        ) {</span>
+            @Override public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L240">                return buildHeaders(true);</span>
+            }
+        };
+
+<span class="nc" id="L244">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L245">    }</span>
+
+<span class="nc" id="L247">    static class Prescription {</span>
+        long id;
+        String patientUsername;
+        String drug;
+        String dosage;
+        String directions;
+        int refillAmount;
+        String createdAt;
+
+        @Override
+        public String toString() {
+<span class="nc" id="L258">            return drug + &quot; &quot; + dosage + &quot; (Refills: &quot; + refillAmount + &quot;)&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

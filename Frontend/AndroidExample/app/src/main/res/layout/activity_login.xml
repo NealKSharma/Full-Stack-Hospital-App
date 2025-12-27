@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+    android:background="@drawable/background_login_signup">
+
+<LinearLayout
+    android:id="@+id/content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="8dp"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <ImageView
+        android:layout_width="350dp"
+        android:layout_height="350dp"
+        android:adjustViewBounds="false"
+        android:scaleType="fitCenter"
+        android:src="@drawable/saint_cys_logo_white_wtext"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <EditText
+        android:id="@+id/login_username_edt"
+        android:layout_width="300dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="100dp"
+        android:layout_marginBottom="12dp"
+        android:hint="Username"
+        android:paddingStart="12dp"
+        android:background="@drawable/bg_login_field"
+        android:paddingEnd="10dp"
+        android:textSize="18dp"
+        android:drawableStart="@drawable/ic_login"
+    android:drawablePadding="10dp"/>
+
+    <EditText
+        android:id="@+id/login_password_edt"
+        android:layout_width="300dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="8dp"
+        android:textSize="18dp"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:background="@drawable/bg_login_field"
+        android:paddingStart="12dp"
+        android:paddingEnd="10dp"
+        android:drawableStart="@drawable/ic_password"
+    android:drawablePadding="10dp" />
+</LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottom_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="55dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/login_login_btn"
+            android:layout_width="300dp"
+            android:layout_height="56dp"
+            android:letterSpacing=".07"
+            android:background="@drawable/bg_login_button"
+            android:text="Login"
+            android:textColor="@android:color/white"
+            android:textSize="20dp" />
+
+        <TextView
+            android:id="@+id/login_signup_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:text="DON'T HAVE AN ACCOUNT? SIGN UP NOW!"
+            android:textColor="#fc0303"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+
+
+
+
+
+</FrameLayout>
+

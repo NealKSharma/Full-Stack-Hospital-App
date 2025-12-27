@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Selected day (current day you tapped) -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF0000"/>       <!-- your red -->
+            <corners android:radius="0dp"/>
+            <stroke android:width="1dp" android:color="@color/saint_red"/>
+        </shape>
+    </item>
+
+    <!-- Day that has at least one appointment (but not currently selected) -->
+    <item android:state_activated="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FBEBEB"/>       <!-- very light red tint -->
+            <corners android:radius="0dp"/>
+            <stroke android:width="1dp" android:color="#E0E0E0"/>
+        </shape>
+    </item>
+
+    <!-- Normal day -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+            <solid android:color="#FFFFFF"/>
+            <corners android:radius="0dp"/>
+            <stroke android:width="1dp" android:color="#E0E0E0"/> <!-- grid line -->
+        </shape>
+    </item>
+
+</selector>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="saint_red">#fc0303</color>
+    <color name="popup_surface">#2E2E2E</color>
+    <color name="popup_on_surface">#FFFFFF</color>
+    <color name="popup_surface_variant">#3A3A3A</color>
+    <color name="popup_outline">#555555</color>
+</resources>

@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <FrameLayout
+        android:id="@+id/convo_bg"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/bg_avatar_circle">
+
+        <ImageView
+            android:id="@+id/convo_avatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_person"
+            app:tint="#E6E6E6" />
+    </FrameLayout>
+
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/convo_name"
+            android:text="John Smith"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#111111"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/convo_preview"
+            android:text="Hello there!"
+            android:textSize="14sp"
+            android:textColor="#777777"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/convo_time"
+        android:text="16:03"
+        android:textSize="12sp"
+        android:textColor="#777777"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="top"/>
+</LinearLayout>

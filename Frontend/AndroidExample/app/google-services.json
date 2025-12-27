@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "503840967992",
+    "project_id": "saintcyshopsital",
+    "storage_bucket": "saintcyshopsital.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503840967992:android:ae15941180fef06f7545cd",
+        "android_client_info": {
+          "package_name": "com.project.saintcyshospital"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC863a0lCsamJkicOEKj7HTv-FPWj-UYzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

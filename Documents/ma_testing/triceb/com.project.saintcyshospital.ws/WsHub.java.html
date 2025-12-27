@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WsHub.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital.ws</a> &gt; <span class="el_source">WsHub.java</span></div><h1>WsHub.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital.ws;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
+
+
+/**
+ * App-wide notification websocket hub.
+ *
+ * &lt;p&gt;Maintains a single process-wide connection to &lt;code&gt;/notif&lt;/code&gt;, posts system
+ * notifications for server-pushed events, and broadcasts raw text payloads via
+ * {@link #ACTION_WS_MESSAGE} intents.&lt;/p&gt;
+ *
+ * &lt;p&gt;Use {@link #start(Context)} in each visible activity (we ref-count) and
+ * {@link #stop()} in {@code onStop()}.&lt;/p&gt;
+ * @author Trice Buchanan
+ */
+<span class="nc" id="L24">public class WsHub {</span>
+
+    /** Broadcast action for delivered websocket messages (payload in {@link #EXTRA_TEXT}). */
+    public static final String ACTION_WS_MESSAGE = &quot;com.project.saintcyshospital.WS_MESSAGE&quot;;
+    /** Intent extra key containing the text body of the notification. */
+    public static final String EXTRA_TEXT = &quot;text&quot;;
+
+    /**
+     * Singleton instance of the websocket hub used throughout the app.
+     */
+<span class="nc" id="L34">    private static final WsHub INSTANCE = new WsHub();</span>
+
+    /**
+     * Returns the shared {@link WsHub} instance.
+     *
+     * @return the process-wide websocket hub
+     */
+<span class="nc" id="L41">    public static WsHub get() { return INSTANCE; }</span>
+
+    /**
+     * Underlying websocket client responsible for connecting to the
+     * notifications endpoint and dispatching events to the listener.
+     */
+<span class="nc" id="L47">    private final WebSocketClient client = new WebSocketClient();</span>
+
+    /**
+     * Application context captured on first {@link #start(Context)} call and
+     * used for toasts, notifications, and broadcasts to avoid leaking
+     * activity references.
+     */
+    private Context appCtx;
+
+    /**
+     * System {@link NotificationManager} used to post notifications for
+     * incoming websocket messages.
+     */
+    private NotificationManager nm;
+
+    /**
+     * Count of active callers that have invoked {@link #start(Context)} and
+     * not yet matched it with {@link #stop()}. When this reaches zero the
+     * websocket connection is disabled and closed.
+     */
+<span class="nc" id="L67">    private int refCount = 0;</span>
+
+    /**
+     * Websocket endpoint used for receiving live notification messages.
+     */
+    private static final String WS_URL = &quot;wss://gwenda-gentling-discomfortably.ngrok-free.dev/notif&quot;;
+
+    /**
+     * Notification channel id used for websocket-driven notifications.
+     * Created on first {@link #start(Context)} call.
+     */
+    private static final String CHANNEL_ID_DEBUG = &quot;notif_ws_debug&quot;;
+
+    /**
+     * Group key used to group individual notification messages into a single
+     * summary notification in the status shade.
+     */
+    private static final String GROUP_KEY_NOTIFS = &quot;scys.notifs.group&quot;;
+
+    /**
+     * Monotonically increasing id used to assign unique ids to each posted
+     * notification so they do not overwrite each other.
+     */
+<span class="nc" id="L90">    private static int nextNotifyId = 1;</span>
+
+    /**
+     * Fixed notification id for the summary notification that represents the
+     * grouped set of websocket notifications.
+     */
+    private static final int SUMMARY_ID = 999000;
+
+
+
+    /**
+     * Increments the visible-screen ref count and ensures the websocket is connected.
+     * Also creates the notification channel (id {@value #CHANNEL_ID_DEBUG}) once.
+     *
+     * @param ctx any context; the hub holds an application context internally
+     */
+    public synchronized void start(Context ctx) {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (appCtx == null) {</span>
+<span class="nc" id="L108">            appCtx = ctx.getApplicationContext();</span>
+<span class="nc" id="L109">            nm = (android.app.NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);</span>
+
+<span class="nc" id="L111">            android.app.NotificationChannel ch = new android.app.NotificationChannel(</span>
+                    CHANNEL_ID_DEBUG,
+                    &quot;Live Notifications DEBUG&quot;,
+                    android.app.NotificationManager.IMPORTANCE_HIGH
+            );
+<span class="nc" id="L116">            ch.enableVibration(true);</span>
+<span class="nc" id="L117">            ch.enableLights(true);</span>
+<span class="nc" id="L118">            nm.createNotificationChannel(ch);</span>
+        }
+
+<span class="nc" id="L121">        refCount++;</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (refCount == 1) {</span>
+<span class="nc" id="L123">            client.setEnabled(true);</span>
+<span class="nc" id="L124">            connect();</span>
+        }
+<span class="nc" id="L126">    }</span>
+
+    /**
+     * Decrements the visible-screen ref count. When it reaches zero, the hub
+     * disables and disconnects the websocket to avoid unnecessary reconnect loops.
+     */
+    public synchronized void stop() {
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (refCount &gt; 0) refCount--;</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (refCount == 0) {</span>
+<span class="nc" id="L135">            client.setEnabled(false);</span>
+<span class="nc" id="L136">            client.disconnect();</span>
+        }
+<span class="nc" id="L138">    }</span>
+
+    /**
+     * Internal connect routine that builds the client listener and handles
+     * onOpen/onMessage/onClosed/onFailure. Posts grouped notifications and emits
+     * a broadcast ({@link #ACTION_WS_MESSAGE}) for screens that want the raw text.
+     */
+    private void connect() {
+<span class="nc" id="L146">        client.connect(appCtx, WS_URL, new WebSocketClient.Listener() {</span>
+            /**
+             * Called when the websocket connection is successfully opened.
+             * Currently shows a simple toast for debugging/visibility.
+             */
+            @Override public void onOpen() {
+<span class="nc" id="L152">                Toast.makeText(appCtx.getApplicationContext(), &quot;WS Connected&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L153">            }</span>
+
+            /**
+             * Called whenever a text message is received from the server.
+             * Attempts to parse a JSON payload for title/content, posts one
+             * or more grouped system notifications, and broadcasts the body
+             * via @link #ACTION_WS_MESSAGE.
+             *
+             * @param text raw message payload received from the websocket
+             */
+            @Override public void onMessage(String text) {
+<span class="nc" id="L164">                String title = &quot;Hospital update&quot;;</span>
+<span class="nc" id="L165">                String body  = text;</span>
+                try {
+<span class="nc" id="L167">                    org.json.JSONObject o = new org.json.JSONObject(text);</span>
+<span class="nc" id="L168">                    title = o.optString(&quot;title&quot;, title);</span>
+<span class="nc" id="L169">                    body  = o.optString(&quot;content&quot;, body);</span>
+<span class="nc" id="L170">                } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L172">                android.widget.Toast.makeText(appCtx, &quot;notif: &quot; + body, android.widget.Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L173">                android.util.Log.d(&quot;WS_NOTIF&quot;, &quot;posting #&quot; + nextNotifyId + &quot; &quot; + title + &quot; / &quot; + body);</span>
+
+<span class="nc" id="L175">                androidx.core.app.NotificationCompat.Builder child =</span>
+<span class="nc" id="L176">                        new androidx.core.app.NotificationCompat.Builder(appCtx, CHANNEL_ID_DEBUG)</span>
+<span class="nc" id="L177">                                .setSmallIcon(android.R.drawable.ic_dialog_info)</span>
+<span class="nc" id="L178">                                .setContentTitle(title)</span>
+<span class="nc" id="L179">                                .setContentText(body)</span>
+<span class="nc" id="L180">                                .setStyle(new androidx.core.app.NotificationCompat.BigTextStyle().bigText(body))</span>
+<span class="nc" id="L181">                                .setWhen(System.currentTimeMillis())</span>
+<span class="nc" id="L182">                                .setShowWhen(true)</span>
+<span class="nc" id="L183">                                .setAutoCancel(true)</span>
+<span class="nc" id="L184">                                .setCategory(androidx.core.app.NotificationCompat.CATEGORY_MESSAGE)</span>
+<span class="nc" id="L185">                                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)</span>
+<span class="nc" id="L186">                                .setGroup(GROUP_KEY_NOTIFS)</span>
+<span class="nc" id="L187">                                .setOnlyAlertOnce(false)</span>
+<span class="nc" id="L188">                                .setDefaults(android.app.Notification.DEFAULT_ALL);</span>
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                if (android.os.Build.VERSION.SDK_INT &gt;= 33) {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                    if (androidx.core.content.ContextCompat.checkSelfPermission(</span>
+<span class="nc" id="L192">                            appCtx, android.Manifest.permission.POST_NOTIFICATIONS</span>
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+<span class="nc" id="L194">                        android.util.Log.w(&quot;WS_NOTIF&quot;, &quot;blocked: no POST_NOTIFICATIONS permission&quot;);</span>
+<span class="nc" id="L195">                        return;</span>
+                    }
+                }
+
+<span class="nc" id="L199">                int id = nextNotifyId++;</span>
+<span class="nc" id="L200">                nm.notify(id, child.build());</span>
+
+<span class="nc" id="L202">                androidx.core.app.NotificationCompat.Builder summary =</span>
+<span class="nc" id="L203">                        new androidx.core.app.NotificationCompat.Builder(appCtx, CHANNEL_ID_DEBUG)</span>
+<span class="nc" id="L204">                                .setSmallIcon(android.R.drawable.ic_dialog_info)</span>
+<span class="nc" id="L205">                                .setContentTitle(&quot;New updates&quot;)</span>
+<span class="nc" id="L206">                                .setContentText(&quot;You have new notifications&quot;)</span>
+<span class="nc" id="L207">                                .setStyle(new androidx.core.app.NotificationCompat.InboxStyle())</span>
+<span class="nc" id="L208">                                .setGroup(GROUP_KEY_NOTIFS)</span>
+<span class="nc" id="L209">                                .setGroupSummary(true)</span>
+<span class="nc" id="L210">                                .setAutoCancel(true)</span>
+<span class="nc" id="L211">                                .setOnlyAlertOnce(true)</span>
+<span class="nc" id="L212">                                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW);</span>
+
+<span class="nc" id="L214">                nm.notify(SUMMARY_ID, summary.build());</span>
+
+<span class="nc" id="L216">                android.content.Intent i = new android.content.Intent(ACTION_WS_MESSAGE);</span>
+<span class="nc" id="L217">                i.setPackage(appCtx.getPackageName());</span>
+<span class="nc" id="L218">                i.putExtra(EXTRA_TEXT, body);</span>
+<span class="nc" id="L219">                appCtx.sendBroadcast(i);</span>
+<span class="nc" id="L220">            }</span>
+
+            /**
+             * Called when the websocket connection is closed by either side.
+             * Used primarily for lightweight debug feedback via a toast.
+             *
+             * @param code   close status code
+             * @param reason human-readable description of the close reason
+             */
+            @Override public void onClosed(int code, String reason) {
+<span class="nc" id="L230">                Toast.makeText(appCtx.getApplicationContext(), &quot;WS Closed&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L231">            }</span>
+
+            /**
+             * Called when the websocket connection encounters an error.
+             * Currently logs the failure via a toast for visibility.
+             *
+             * @param t the underlying error encountered by the client
+             */
+            @Override public void onFailure(Throwable t) {
+<span class="nc" id="L240">                Toast.makeText(appCtx.getApplicationContext(), &quot;WS Failure&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L241">            }</span>
+        });
+<span class="nc" id="L243">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

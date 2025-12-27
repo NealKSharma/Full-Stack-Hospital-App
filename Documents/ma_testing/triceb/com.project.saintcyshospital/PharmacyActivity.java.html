@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PharmacyActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">PharmacyActivity.java</span></div><h1>PharmacyActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.VolleyError;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.ArrayList;
+
+<span class="nc" id="L22">public class PharmacyActivity extends BaseActivity {</span>
+
+    private ListView medsList;
+    private LinearLayout openCartBtn;
+    private TextView cartBadge;
+
+<span class="nc" id="L28">    private final ArrayList&lt;Medicine&gt; meds = new ArrayList&lt;&gt;();</span>
+    private ArrayAdapter&lt;Medicine&gt; adapter;
+<span class="nc" id="L30">    private int openPosition = -1;</span>
+
+
+    private static final String URL_MED_LIST = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/products&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L37">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L38">        setContentView(R.layout.activity_pharmacy);</span>
+<span class="nc" id="L39">        setupBottomNav(R.id.nav_pharmacy);</span>
+
+<span class="nc" id="L41">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L43">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L44">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L45">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L46">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L48">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L49">            return insets;</span>
+        });
+
+<span class="nc" id="L52">        medsList = findViewById(R.id.meds_list);</span>
+<span class="nc" id="L53">        android.view.animation.LayoutAnimationController controller = android.view.animation.AnimationUtils.loadLayoutAnimation(this, R.anim.layout_fall_down);</span>
+<span class="nc" id="L54">        medsList.setLayoutAnimation(controller);</span>
+
+<span class="nc" id="L56">        openCartBtn = findViewById(R.id.open_cart_btn);</span>
+<span class="nc" id="L57">        cartBadge = findViewById(R.id.cart_badge);</span>
+
+<span class="nc" id="L59">        updateCartBadge();</span>
+
+<span class="nc" id="L61">        adapter = new ArrayAdapter&lt;Medicine&gt;(this, R.layout.item_med, meds) {</span>
+            @Override
+            public android.view.View getView(int position, android.view.View convertView, android.view.ViewGroup parent) {
+<span class="nc" id="L64">                android.view.View v = convertView;</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                if (v == null) {</span>
+<span class="nc" id="L66">                    v = getLayoutInflater().inflate(R.layout.item_med, parent, false);</span>
+                }
+
+<span class="nc" id="L69">                Medicine m = getItem(position);</span>
+
+<span class="nc" id="L71">                com.google.android.material.card.MaterialCardView card =</span>
+<span class="nc" id="L72">                        v.findViewById(R.id.med_card);</span>
+<span class="nc" id="L73">                android.view.View addBg = v.findViewById(R.id.add_to_cart_bg);</span>
+<span class="nc" id="L74">                android.view.View addIcon = v.findViewById(R.id.add_to_cart_icon);</span>
+
+<span class="nc" id="L76">                android.widget.TextView brand   = v.findViewById(R.id.med_brand_name);</span>
+<span class="nc" id="L77">                android.widget.TextView generic = v.findViewById(R.id.med_generic_name);</span>
+<span class="nc" id="L78">                android.widget.TextView dosage  = v.findViewById(R.id.med_dosage);</span>
+<span class="nc" id="L79">                android.widget.TextView price   = v.findViewById(R.id.med_price);</span>
+
+<span class="nc" id="L81">                brand.setText(m.name);</span>
+<span class="nc" id="L82">                generic.setText(m.genericName);</span>
+<span class="nc" id="L83">                dosage.setText(m.dosage);</span>
+<span class="nc" id="L84">                price.setText(String.format(&quot;$%.2f&quot;, m.priceCents / 100.0));</span>
+
+<span class="nc" id="L86">                float openOffset = dpToPx(91);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (position == openPosition) {</span>
+<span class="nc" id="L88">                    card.setTranslationX(-openOffset);</span>
+                } else {
+<span class="nc" id="L90">                    card.setTranslationX(0f);</span>
+                }
+
+<span class="nc" id="L93">                card.setOnClickListener(view -&gt; {</span>
+                    float target;
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    if (openPosition == position) {</span>
+<span class="nc" id="L96">                        openPosition = -1;</span>
+<span class="nc" id="L97">                        target = 0f;</span>
+                    } else {
+<span class="nc" id="L99">                        int oldPos = openPosition;</span>
+<span class="nc" id="L100">                        openPosition = position;</span>
+<span class="nc" id="L101">                        target = -openOffset;</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                        if (oldPos != -1) {</span>
+<span class="nc" id="L104">                            int first = medsList.getFirstVisiblePosition();</span>
+<span class="nc" id="L105">                            int last  = medsList.getLastVisiblePosition();</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">                            if (oldPos &gt;= first &amp;&amp; oldPos &lt;= last) {</span>
+<span class="nc" id="L107">                                android.view.View oldView = medsList.getChildAt(oldPos - first);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                                if (oldView != null) {</span>
+<span class="nc" id="L109">                                    com.google.android.material.card.MaterialCardView oldCard =</span>
+<span class="nc" id="L110">                                            oldView.findViewById(R.id.med_card);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                                    if (oldCard != null) {</span>
+<span class="nc" id="L112">                                        oldCard.animate().translationX(0f).setDuration(140).start();</span>
+                                    }
+                                }
+                            }
+                        }
+                    }
+<span class="nc" id="L118">                    card.animate().translationX(target).setDuration(140).start();</span>
+<span class="nc" id="L119">                });</span>
+
+<span class="nc" id="L121">                addBg.setOnClickListener(view -&gt; {</span>
+<span class="nc" id="L122">                    CartStore.get().add(m);</span>
+<span class="nc" id="L123">                    updateCartBadge();</span>
+<span class="nc" id="L124">                    Toast.makeText(getContext(), &quot;Added: &quot; + m.name, Toast.LENGTH_SHORT).show();</span>
+
+<span class="nc" id="L126">                    openPosition = -1;</span>
+<span class="nc" id="L127">                    card.animate().translationX(0f).setDuration(140).start();</span>
+<span class="nc" id="L128">                });</span>
+<span class="nc" id="L129">                addIcon.setOnClickListener(vv -&gt; addBg.performClick());</span>
+
+<span class="nc" id="L131">                return v;</span>
+            }
+        };
+
+<span class="nc" id="L135">        medsList.setAdapter(adapter);</span>
+
+<span class="nc" id="L137">        openCartBtn.setOnClickListener(v -&gt; startActivity(new Intent(this, CartActivity.class)));</span>
+
+<span class="nc" id="L139">        fetchMedicines();</span>
+<span class="nc" id="L140">    }</span>
+
+    @Override
+    protected void onResume() {
+<span class="nc" id="L144">        super.onResume();</span>
+<span class="nc" id="L145">        updateCartBadge();</span>
+<span class="nc" id="L146">    }</span>
+    private void fetchMedicines() {
+<span class="nc" id="L148">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                URL_MED_LIST,
+                null,
+                resp -&gt; {
+<span class="nc" id="L153">                    meds.clear();</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                    for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L155">                        org.json.JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                        if (o == null) continue;</span>
+
+<span class="nc" id="L158">                        String id    = o.optString(&quot;id&quot;, &quot;&quot;);</span>
+<span class="nc" id="L159">                        String name  = o.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc" id="L160">                        String gen   = o.optString(&quot;genericName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L161">                        String dose  = o.optString(&quot;dosage&quot;, &quot;&quot;);</span>
+<span class="nc" id="L162">                        int price    = o.optInt(&quot;priceInCents&quot;, 0);</span>
+<span class="nc" id="L163">                        String img   = o.optString(&quot;imageUrl&quot;, null);</span>
+
+<span class="nc" id="L165">                        meds.add(new Medicine(id, name, gen, dose, price, img));</span>
+                    }
+<span class="nc" id="L167">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L168">                    medsList.scheduleLayoutAnimation();</span>
+<span class="nc" id="L169">                },</span>
+<span class="nc" id="L170">                (VolleyError error) -&gt; handleVolleyAuthError(error, () -&gt; fetchMedicines())</span>
+<span class="nc" id="L171">        ) {</span>
+            @Override
+            public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L174">                java.util.Map&lt;String, String&gt; h = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L175">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L176" title="All 4 branches missed.">                if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L177">                    h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+                }
+<span class="nc" id="L179">                h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L180">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L184">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L185">    }</span>
+
+    private float dpToPx(float dp) {
+<span class="nc" id="L188">        return dp * getResources().getDisplayMetrics().density;</span>
+    }
+
+    private void updateCartBadge() {
+<span class="nc" id="L192">        int count = CartStore.get().totalItems();</span>
+
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (count &lt;= 0) {</span>
+<span class="nc" id="L195">            cartBadge.setText(&quot;0&quot;);           // or &quot;&quot; if you want it empty</span>
+        } else {
+<span class="nc" id="L197">            cartBadge.setText(String.valueOf(count));</span>
+        }
+<span class="nc" id="L199">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">HomeActivity.java</span></div><h1>HomeActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import androidx.core.view.ViewCompat;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+/**
+ * Home screen activity for the Saint Cys Hospital app.
+ * &lt;p&gt;
+ * Displays a welcome message and login/sign-up options when the user is not
+ * authenticated, or a personalized greeting and bottom navigation when the
+ * user is logged in. Acts as the main entry point after launching the app.
+ * @author quinn beckman
+ */
+<span class="fc" id="L21">public class HomeActivity extends BaseActivity {</span>
+
+    /**
+     * Text view used to display the main message on the home screen.
+     */
+    private TextView messageText;
+
+    /**
+     * Text view used to show the current user's name or a prominent title.
+     */
+    private TextView usernameText;
+
+    /**
+     * Button that navigates the user to the login screen.
+     */
+    private Button loginButton;
+
+    /**
+     * Button that navigates the user to the sign-up/registration screen.
+     */
+    private Button signupButton;
+
+    /**
+     * Initializes the home screen, sets up view bindings, and configures the UI
+     * based on whether the user is currently logged in.
+     *
+     * @param savedInstanceState previously saved instance state, or {@code null}
+     *                           if the activity is starting fresh.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L52">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L53">        CartStore.get().init(getApplicationContext());</span>
+<span class="fc" id="L54">        setContentView(R.layout.activity_main);</span>
+
+        // Bind views
+<span class="fc" id="L57">        messageText = findViewById(R.id.main_msg_text);</span>
+<span class="fc" id="L58">        usernameText = findViewById(R.id.main_username_txt);</span>
+<span class="fc" id="L59">        loginButton = findViewById(R.id.main_login_btn);</span>
+<span class="fc" id="L60">        signupButton = findViewById(R.id.main_signup_btn);</span>
+
+
+<span class="fc" id="L63">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+<span class="fc" id="L64">        View moreMenu = findViewById(R.id.moreMenu);</span>
+<span class="fc" id="L65">        boolean loggedIn = AuthManager.isLoggedIn(getApplicationContext());</span>
+
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (loggedIn) {</span>
+            // Show welcome state
+<span class="nc" id="L69">            String username = AuthManager.getUsername(getApplicationContext());</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (username == null) username = &quot;&quot;;</span>
+
+<span class="nc" id="L72">            messageText.setText(&quot;Welcome!&quot;);</span>
+<span class="nc" id="L73">            usernameText.setText(&quot;Welcome &quot; + username);</span>
+<span class="nc" id="L74">            usernameText.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L76">            loginButton.setVisibility(View.GONE);</span>
+<span class="nc" id="L77">            signupButton.setVisibility(View.GONE);</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (bottomNav != null) {</span>
+<span class="nc" id="L80">                bottomNav.setVisibility(View.VISIBLE);</span>
+
+                // Keep inset fix
+<span class="nc" id="L83">                ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L84">                    int left = view.getPaddingLeft();</span>
+<span class="nc" id="L85">                    int top = view.getPaddingTop();</span>
+<span class="nc" id="L86">                    int right = view.getPaddingRight();</span>
+<span class="nc" id="L87">                    view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L88">                    return insets;</span>
+                });
+
+                // Enable nav only when logged in
+<span class="nc" id="L92">                setupBottomNav(R.id.nav_home);</span>
+            }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            if (moreMenu != null) {</span>
+<span class="nc" id="L95">                moreMenu.setVisibility(View.VISIBLE);</span>
+            }
+<span class="nc" id="L97">        } else {</span>
+<span class="fc" id="L98">            usernameText.setTextSize(50);</span>
+<span class="fc" id="L99">            usernameText.setVisibility(View.VISIBLE);</span>
+
+<span class="fc" id="L101">            loginButton.setVisibility(View.VISIBLE);</span>
+<span class="fc" id="L102">            signupButton.setVisibility(View.VISIBLE);</span>
+
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            if (bottomNav != null) {</span>
+<span class="fc" id="L105">                bottomNav.setVisibility(View.GONE);</span>
+            }
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            if (moreMenu != null) {</span>
+<span class="fc" id="L108">                moreMenu.setVisibility(View.GONE);</span>
+            }
+        }
+
+        // Button actions (safe in both states; visibility controls access)
+<span class="fc" id="L113">        loginButton.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L114">            Intent intent = new Intent(HomeActivity.this, LoginActivity.class);</span>
+<span class="fc" id="L115">            startActivity(intent);</span>
+<span class="fc" id="L116">        });</span>
+
+<span class="fc" id="L118">        signupButton.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L119">            Intent intent = new Intent(HomeActivity.this, SignupActivity.class);</span>
+<span class="nc" id="L120">            startActivity(intent);</span>
+<span class="nc" id="L121">        });</span>
+<span class="fc" id="L122">    }</span>
+
+    /**
+     * Indicates whether this activity requires the user to be authenticated
+     * before it can be accessed.
+     *
+     * @return {@code false} because the home screen is accessible
+     *         without authentication.
+     */
+    @Override
+    protected boolean requiresAuth() {
+<span class="fc" id="L133">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

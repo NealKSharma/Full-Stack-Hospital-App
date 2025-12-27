@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/signupHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="100dp"
+        android:layout_marginBottom="10dp"
+        android:text="Cyclone Hospital"
+        android:textColor="#fc0303"
+        android:textSize="40dp"
+        android:textStyle="bold"></TextView>
+
+    <TextView
+        android:id="@+id/signupSubtext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="75dp"
+        android:text="Patient / Doctor / Admin Portal"
+        android:textColor="#000000"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="5dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Username:"
+            android:textColor="#000000"
+            android:textSize="20dp"></TextView>
+
+        <EditText
+            android:id="@+id/signup_username_edt"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:backgroundTint="#fc0303"
+            android:hint="enter username here"></EditText>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#fc0303"
+            android:text="Password:"
+            android:textColor="#000000"
+            android:textSize="20dp"></TextView>
+
+        <EditText
+            android:id="@+id/signup_password_edt"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:backgroundTint="#fc0303"
+            android:hint="enter password here"
+            android:inputType="textPassword"></EditText>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#fc0303"
+            android:text="Confirm Password:"
+            android:textColor="#000000"
+            android:textSize="20dp"></TextView>
+
+        <EditText
+            android:id="@+id/signup_password_confirm_edt"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:backgroundTint="#fc0303"
+            android:hint="enter password here"
+            android:inputType="textPassword"></EditText>
+
+    </LinearLayout>
+
+    <RadioGroup
+        android:id="@+id/signupRoles"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20sp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/signupRolePatient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10sp"
+            app:buttonTint="#fc0303"
+            android:checked="true"
+            android:text="Patient" />
+
+        <RadioButton
+            android:id="@+id/signupRoleDoctor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10sp"
+            app:buttonTint="#fc0303"
+            android:text="Doctor" />
+
+        <RadioButton
+            android:id="@+id/signupRoleAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonTint="#fc0303"
+            android:text="Administrator"/>
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="75dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/signup_signup_btn"
+            android:layout_width="200dp"
+            android:layout_height="65dp"
+            android:backgroundTint="#fc0303"
+            android:text="Sign Up"
+            android:textColor="#ffffff"
+            android:textSize="20sp"></Button>
+
+        <TextView
+            android:id="@+id/signup_login_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:text="Already have an account? Login now!"
+            android:textColor="#fc0303"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+
+</androidx.appcompat.widget.LinearLayoutCompat>

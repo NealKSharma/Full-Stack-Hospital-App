@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultipartFormRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital.net</a> &gt; <span class="el_source">MultipartFormRequest.java</span></div><h1>MultipartFormRequest.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital.net;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.toolbox.HttpHeaderParser;
+
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.HashMap;
+
+public class MultipartFormRequest extends Request&lt;JSONObject&gt; {
+    private final Response.Listener&lt;JSONObject&gt; listener;
+    private final Map&lt;String, String&gt; headers;
+    private final Map&lt;String, String&gt; formFields;   // text parts
+    private final Map&lt;String, FilePart&gt; fileParts;  // files
+    private final String boundary;
+
+    public static class FilePart {
+        public final String fileName;
+        public final String contentType;
+        public final byte[] data;
+<span class="nc" id="L27">        public FilePart(String fileName, String contentType, byte[] data) {</span>
+<span class="nc" id="L28">            this.fileName = fileName; this.contentType = contentType; this.data = data;</span>
+<span class="nc" id="L29">        }</span>
+    }
+
+    public MultipartFormRequest(
+            int method, String url,
+            Map&lt;String, String&gt; headers,
+            Map&lt;String, String&gt; formFields,
+            Map&lt;String, FilePart&gt; fileParts,
+            Response.Listener&lt;JSONObject&gt; listener,
+            Response.ErrorListener errorListener
+    ) {
+<span class="nc" id="L40">        super(method, url, errorListener);</span>
+<span class="nc" id="L41">        this.listener = listener;</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        this.headers = (headers != null) ? headers : new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        this.formFields = (formFields != null) ? formFields : new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        this.fileParts = (fileParts != null) ? fileParts : new HashMap&lt;&gt;();</span>
+<span class="nc" id="L45">        this.boundary = &quot;----AndroidFormBoundary&quot; + System.currentTimeMillis();</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override public String getBodyContentType() {
+<span class="nc" id="L49">        return &quot;multipart/form-data; boundary=&quot; + boundary;</span>
+    }
+
+    @Override public Map&lt;String, String&gt; getHeaders() throws AuthFailureError {
+<span class="nc" id="L53">        return headers;</span>
+    }
+
+    @Override public byte[] getBody() {
+<span class="nc" id="L57">        ByteArrayOutputStream bos = new ByteArrayOutputStream();</span>
+        try {
+<span class="nc" id="L59">            String lineEnd = &quot;\r\n&quot;;</span>
+<span class="nc" id="L60">            String twoHyphens = &quot;--&quot;;</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            for (Map.Entry&lt;String, String&gt; e : formFields.entrySet()) {</span>
+<span class="nc" id="L63">                bos.write((twoHyphens + boundary + lineEnd).getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L64">                bos.write((&quot;Content-Disposition: form-data; name=\&quot;&quot; + e.getKey() + &quot;\&quot;&quot; + lineEnd).getBytes());</span>
+<span class="nc" id="L65">                bos.write((&quot;Content-Type: text/plain; charset=UTF-8&quot; + lineEnd + lineEnd).getBytes());</span>
+<span class="nc" id="L66">                bos.write(e.getValue().getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L67">                bos.write(lineEnd.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L68">            }</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            for (Map.Entry&lt;String, FilePart&gt; e : fileParts.entrySet()) {</span>
+<span class="nc" id="L71">                FilePart p = e.getValue();</span>
+<span class="nc" id="L72">                bos.write((twoHyphens + boundary + lineEnd).getBytes());</span>
+<span class="nc" id="L73">                bos.write((&quot;Content-Disposition: form-data; name=\&quot;&quot; + e.getKey() + &quot;\&quot;; filename=\&quot;&quot; + p.fileName + &quot;\&quot;&quot; + lineEnd).getBytes());</span>
+<span class="nc" id="L74">                bos.write((&quot;Content-Type: &quot; + p.contentType + lineEnd + lineEnd).getBytes());</span>
+<span class="nc" id="L75">                bos.write(p.data);</span>
+<span class="nc" id="L76">                bos.write(lineEnd.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L77">            }</span>
+
+<span class="nc" id="L79">            bos.write((twoHyphens + boundary + twoHyphens + lineEnd).getBytes());</span>
+<span class="nc" id="L80">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L81">        return bos.toByteArray();</span>
+    }
+
+    @Override protected Response&lt;JSONObject&gt; parseNetworkResponse(NetworkResponse response) {
+        try {
+<span class="nc" id="L86">            String json = new String(response.data, HttpHeaderParser.parseCharset(response.headers, &quot;UTF-8&quot;));</span>
+<span class="nc" id="L87">            return Response.success(new JSONObject(json), HttpHeaderParser.parseCacheHeaders(response));</span>
+<span class="nc" id="L88">        } catch (Exception e) {</span>
+<span class="nc" id="L89">            return Response.success(new JSONObject(), HttpHeaderParser.parseCacheHeaders(response));</span>
+        }
+    }
+
+    @Override protected void deliverResponse(JSONObject response) {
+<span class="nc" id="L94">        listener.onResponse(response);</span>
+<span class="nc" id="L95">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

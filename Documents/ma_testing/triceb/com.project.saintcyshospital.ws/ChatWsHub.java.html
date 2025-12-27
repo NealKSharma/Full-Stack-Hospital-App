@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatWsHub.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital.ws</a> &gt; <span class="el_source">ChatWsHub.java</span></div><h1>ChatWsHub.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital.ws;
+
+import android.content.Context;
+import android.content.Intent;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.project.saintcyshospital.AuthManager;
+
+import org.json.JSONObject;
+
+/**
+ * Room-scoped chat websocket hub.
+ *
+ * &lt;p&gt;Connects to &lt;code&gt;/chat&lt;/code&gt;, sends a &lt;code&gt;CHAT_JOIN&lt;/code&gt; for the active room,
+ * relays incoming messages as local broadcasts (action {@link #ACTION_CHAT_MESSAGE})
+ * that include {@link #EXTRA_CONVO_ID}, {@link #EXTRA_SENDER}, and {@link #EXTRA_CONTENT}.&lt;/p&gt;
+ *
+ * &lt;p&gt;Use {@link #start(Context, String)} in {@code ChatDetailActivity.onStart()} and
+ * {@link #stop()} in {@code onStop()}.&lt;/p&gt;
+* @author Trice Buchanan
+ */
+<span class="nc" id="L23">public class ChatWsHub {</span>
+    /**
+     * Local broadcast action for incoming chat messages delivered by the
+     * chat websocket. Receivers can extract details using the {@code EXTRA_*}
+     * keys defined in this class.
+     */
+    public static final String ACTION_CHAT_MESSAGE = &quot;com.project.saintcyshospital.CHAT_MESSAGE&quot;;
+    /**
+     * Intent extra key containing the conversation / room identifier
+     * associated with a chat message.
+     */
+    public static final String EXTRA_CONVO_ID = &quot;conversationId&quot;;
+    /**
+     * Intent extra key containing the logical sender of the message
+     * (e.g., &quot;self&quot;, &quot;peer&quot;, or a user identifier).
+     */
+    public static final String EXTRA_SENDER = &quot;sender&quot;;
+    /**
+     * Intent extra key containing the message body/content of the chat
+     * notification.
+     */
+    public static final String EXTRA_CONTENT = &quot;content&quot;;
+    /**
+     * Singleton instance of the room-scoped chat websocket hub.
+     */
+<span class="nc" id="L48">    private static final ChatWsHub INSTANCE = new ChatWsHub();</span>
+
+    /**
+     * Returns the shared {@link ChatWsHub} instance.
+     *
+     * @return the process-wide chat websocket hub
+     */
+<span class="nc" id="L55">    public static ChatWsHub get() { return INSTANCE; }</span>
+    /**
+     * Underlying websocket client used to connect to the chat endpoint and
+     * send/receive frames.
+     */
+<span class="nc" id="L60">    private final WebSocketClient client = new WebSocketClient();</span>
+    /**
+     * Application context captured from the first {@link #start(Context, String)}
+     * call. Used for broadcasting messages without leaking activity contexts.
+     */
+    private Context appCtx;
+    /**
+     * Currently joined conversation / room id. Used both when sending the
+     * initial JOIN frame and when broadcasting incoming messages.
+     */
+    private String activeConversationId;
+
+    /**
+     * Starts (or restarts) the chat websocket for the given conversation id and immediately
+     * sends a &lt;code&gt;CHAT_JOIN&lt;/code&gt; frame.
+     *
+     * @param ctx context used to obtain the application context
+     * @param conversationId the backend room id (e.g., &quot;alice-bob&quot;)
+     */
+    public synchronized void start(Context ctx, String conversationId) {
+<span class="nc" id="L80">        appCtx = ctx.getApplicationContext();</span>
+<span class="nc" id="L81">        activeConversationId = conversationId;</span>
+
+<span class="nc" id="L83">        client.setEnabled(true);</span>
+<span class="nc" id="L84">        connect();</span>
+<span class="nc" id="L85">    }</span>
+
+    /**
+     * Stops the chat websocket and clears the active room.
+     * Safe to call multiple times.
+     */
+    public synchronized void stop() {
+<span class="nc" id="L92">        client.setEnabled(false);</span>
+<span class="nc" id="L93">        client.disconnect();</span>
+<span class="nc" id="L94">        activeConversationId = null;</span>
+<span class="nc" id="L95">    }</span>
+
+    /**
+     * Internal connect routine: builds the client listener, handles onOpen (JOIN),
+     * parses incoming frames, and broadcasts them to the UI layer.
+     */
+    private void connect() {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (activeConversationId == null) return;</span>
+
+<span class="nc" id="L104">        final String WS_CHAT_URL = &quot;wss://gwenda-gentling-discomfortably.ngrok-free.dev/chat&quot;;</span>
+
+<span class="nc" id="L106">        client.connect(appCtx, WS_CHAT_URL, new WebSocketClient.Listener() {</span>
+            /**
+             * Called when the chat websocket connection is opened. Immediately
+             * sends a {@code CHAT_JOIN} frame for the active room.
+             */
+            @Override public void onOpen() {
+                try {
+<span class="nc" id="L113">                    JSONObject join = new JSONObject()</span>
+<span class="nc" id="L114">                            .put(&quot;type&quot;, &quot;CHAT_JOIN&quot;)</span>
+<span class="nc" id="L115">                            .put(&quot;roomId&quot;, activeConversationId);</span>
+<span class="nc" id="L116">                    client.send(join.toString());</span>
+<span class="nc" id="L117">                } catch (Exception ignored) {}</span>
+<span class="nc" id="L118">            }</span>
+
+            /**
+             * Called when a text frame is received from the chat server.
+             * Attempts to parse JSON, filters for {@code CHAT_MESSAGE} type,
+             * and then broadcasts the message details using
+             * @link #ACTION_CHAT_MESSAGE.
+             *
+             * @param text raw message payload received from the websocket
+             */
+            @Override
+            public void onMessage(String text) {
+<span class="nc" id="L130">                String sender = &quot;peer&quot;;</span>
+<span class="nc" id="L131">                String content = text;</span>
+<span class="nc" id="L132">                String type = &quot;&quot;;</span>
+
+                try {
+<span class="nc" id="L135">                    JSONObject j = new JSONObject(text);</span>
+<span class="nc" id="L136">                    sender = j.optString(&quot;sender&quot;, sender);</span>
+<span class="nc" id="L137">                    content = j.optString(&quot;content&quot;, content);</span>
+<span class="nc" id="L138">                    type = j.optString(&quot;type&quot;, &quot;&quot;);</span>
+<span class="nc" id="L139">                } catch (Exception ignored) {}</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                if (!type.equals(&quot;CHAT_MESSAGE&quot;))</span>
+                {
+<span class="nc" id="L143">                    return;</span>
+                }
+
+<span class="nc" id="L146">                Intent i = new Intent(ACTION_CHAT_MESSAGE);</span>
+<span class="nc" id="L147">                i.putExtra(EXTRA_CONVO_ID, activeConversationId);</span>
+<span class="nc" id="L148">                i.putExtra(EXTRA_SENDER, sender);</span>
+<span class="nc" id="L149">                i.putExtra(EXTRA_CONTENT, content);</span>
+<span class="nc" id="L150">                LocalBroadcastManager.getInstance(appCtx).sendBroadcast(i);</span>
+
+<span class="nc" id="L152">            }</span>
+            /**
+             * Called when the chat websocket is closed. Currently a no-op but
+             * available for future logging or reconnection logic.
+             *
+             * @param code   close status code
+             * @param reason close reason string, if provided
+             */
+<span class="nc" id="L160">            @Override public void onClosed(int code, String reason) { }</span>
+            /**
+             * Called when the chat websocket encounters an error. Currently a
+             * no-op placeholder for potential error reporting or retry logic.
+             *
+             * @param t the underlying failure cause
+             */
+<span class="nc" id="L167">            @Override public void onFailure(Throwable t) { }</span>
+        });
+<span class="nc" id="L169">    }</span>
+
+    /**
+     * Sends a preformatted JSON string over the active chat websocket.
+     *
+     * @param textJson a JSON payload (e.g., {&quot;type&quot;:&quot;CHAT_SEND&quot;,&quot;roomId&quot;:&quot;...&quot;,&quot;content&quot;:&quot;...&quot;})
+     * @return {@code true} if the client accepted the send, {@code false} otherwise
+     */
+    public boolean send(String textJson) {
+<span class="nc" id="L178">        return client.send(textJson);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

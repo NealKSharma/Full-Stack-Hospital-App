@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppointmentsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">AppointmentsActivity.java</span></div><h1>AppointmentsActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.format.DateFormat;
+import android.util.Base64;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CalendarView;
+import android.widget.EditText;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.PopupMenu;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+
+<span class="nc" id="L44">public class AppointmentsActivity extends BaseActivity {</span>
+
+    private static final String BASE = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev&quot;;
+    private static final String URL_LIST_MY     = BASE + &quot;/api/appointments/my&quot;;
+    private static final String URL_CREATE      = BASE + &quot;/api/appointments&quot;;
+    private static final String URL_APPROVE_FMT = BASE + &quot;/api/appointments/%s/approve&quot;;
+    private static final String URL_CONFIRM_FMT = BASE + &quot;/api/appointments/%s/confirm&quot;;
+    private static final String URL_CANCEL_FMT  = BASE + &quot;/api/appointments/%s/cancel&quot;;
+
+<span class="nc" id="L53">    static class Appointment {</span>
+        String id, doctorUsername, patientUsername;
+        String patientName, email, phone, type, status;
+        long startMs;
+
+        static Appointment from(JSONObject o) {
+<span class="nc" id="L59">            Appointment a = new Appointment();</span>
+<span class="nc" id="L60">            a.id = String.valueOf(o.optLong(&quot;id&quot;, o.optLong(&quot;appointmentId&quot;, 0)));</span>
+
+<span class="nc" id="L62">            JSONObject p = o.optJSONObject(&quot;patient&quot;);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (p != null) {</span>
+<span class="nc" id="L64">                String fn = p.optString(&quot;firstName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L65">                String ln = p.optString(&quot;lastName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L66">                a.patientUsername = p.optString(&quot;username&quot;, o.optString(&quot;patientUsername&quot;, &quot;&quot;));</span>
+<span class="nc" id="L67">                a.patientName = (fn + &quot; &quot; + ln).trim();</span>
+<span class="nc bnc" id="L68" title="All 4 branches missed.">                if (a.patientName == null || a.patientName.trim().isEmpty()) a.patientName = a.patientUsername;</span>
+<span class="nc" id="L69">            } else {</span>
+<span class="nc" id="L70">                a.patientUsername = o.optString(&quot;patientUsername&quot;, &quot;&quot;);</span>
+<span class="nc" id="L71">                a.patientName = o.optString(&quot;patientName&quot;, a.patientUsername);</span>
+<span class="nc bnc" id="L72" title="All 4 branches missed.">                if (a.patientName == null || a.patientName.trim().isEmpty()) a.patientName = a.patientUsername;</span>
+            }
+
+            // Doctor username
+<span class="nc" id="L76">            JSONObject d = o.optJSONObject(&quot;doctor&quot;);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            a.doctorUsername = (d != null)</span>
+<span class="nc" id="L78">                    ? d.optString(&quot;username&quot;, o.optString(&quot;doctorUsername&quot;, &quot;&quot;))</span>
+<span class="nc" id="L79">                    : o.optString(&quot;doctorUsername&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L81">            a.email  = o.optString(&quot;patientEmail&quot;, &quot;&quot;);</span>
+<span class="nc" id="L82">            a.phone  = o.optString(&quot;patientPhone&quot;, &quot;&quot;);</span>
+<span class="nc" id="L83">            a.type   = o.optString(&quot;type&quot;, o.optString(&quot;notes&quot;, &quot;&quot;));</span>
+<span class="nc" id="L84">            a.status = o.optString(&quot;status&quot;, &quot;PENDING&quot;);</span>
+
+            // local time to avoid weird day shifts
+<span class="nc" id="L87">            long epoch = o.optLong(&quot;startEpochMillis&quot;, 0);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (epoch == 0) {</span>
+<span class="nc" id="L89">                String date = o.optString(&quot;date&quot;, null);</span>
+<span class="nc" id="L90">                String time = o.optString(&quot;time&quot;, null);</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">                if (date != null &amp;&amp; time != null) {</span>
+                    try {
+<span class="nc" id="L93">                        String[] dmy = date.split(&quot;-&quot;);</span>
+<span class="nc" id="L94">                        String[] hms = time.split(&quot;:&quot;);</span>
+<span class="nc" id="L95">                        Calendar c = Calendar.getInstance(TimeZone.getDefault());</span>
+<span class="nc" id="L96">                        c.set(Integer.parseInt(dmy[0]),</span>
+<span class="nc" id="L97">                                Integer.parseInt(dmy[1]) - 1,</span>
+<span class="nc" id="L98">                                Integer.parseInt(dmy[2]),</span>
+<span class="nc" id="L99">                                Integer.parseInt(hms[0]),</span>
+<span class="nc" id="L100">                                Integer.parseInt(hms[1]),</span>
+                                0);
+<span class="nc" id="L102">                        c.set(Calendar.MILLISECOND, 0);</span>
+<span class="nc" id="L103">                        epoch = c.getTimeInMillis();</span>
+<span class="nc" id="L104">                    } catch (Exception ignored) {}</span>
+                }
+            }
+<span class="nc" id="L107">            a.startMs = epoch;</span>
+<span class="nc" id="L108">            return a;</span>
+        }
+    }
+
+<span class="nc" id="L112">    private final List&lt;Appointment&gt; all = new ArrayList&lt;&gt;(), filtered = new ArrayList&lt;&gt;();</span>
+    private RecyclerView rv;
+    private EditText etSearch;
+    private CalendarView calendar;
+    private Adapter adapter;
+    private TextView tvEmpty;
+<span class="nc" id="L118">    private Long dayStartMs = null, dayEndMs = null;</span>
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L121">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L122">        setContentView(R.layout.activity_appointments);</span>
+<span class="nc" id="L123">        setupBottomNav(0);</span>
+
+<span class="nc" id="L125">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+<span class="nc" id="L126">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L127">            int l = view.getPaddingLeft(), t = view.getPaddingTop(), r = view.getPaddingRight();</span>
+<span class="nc" id="L128">            view.setPadding(l, t, r, 0);</span>
+<span class="nc" id="L129">            return insets;</span>
+        });
+
+<span class="nc" id="L132">        tvEmpty = findViewById(R.id.tvEmpty);</span>
+
+<span class="nc" id="L134">        rv = findViewById(R.id.rvAppointments);</span>
+<span class="nc" id="L135">        rv.setLayoutManager(new LinearLayoutManager(this));</span>
+<span class="nc" id="L136">        adapter = new Adapter(</span>
+                filtered,
+                this::jwtHasRoleDoctor,
+                this::updateStatus
+        );
+<span class="nc" id="L141">        rv.setAdapter(adapter);</span>
+
+<span class="nc" id="L143">        etSearch = findViewById(R.id.etSearch);</span>
+<span class="nc" id="L144">        calendar = findViewById(R.id.calendarView);</span>
+
+<span class="nc" id="L146">        View btnToggle = findViewById(R.id.btnToggleCalendar);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (btnToggle != null) btnToggle.setVisibility(View.GONE);</span>
+<span class="nc" id="L148">        calendar.setDate(System.currentTimeMillis(), false, true);</span>
+
+<span class="nc" id="L150">        Button btnNew = findViewById(R.id.btnNewAppointment);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (btnNew != null) {</span>
+<span class="nc" id="L152">            btnNew.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L153">            btnNew.setOnClickListener(v -&gt; showCreateDialog());</span>
+        }
+
+<span class="nc" id="L156">        etSearch.addTextChangedListener(simpleWatcher(this::applyFilters));</span>
+<span class="nc" id="L157">        calendar.setOnDateChangeListener((view, y, m, d) -&gt; applyFilters(y, m, d));</span>
+
+<span class="nc" id="L159">        Calendar today = Calendar.getInstance(TimeZone.getDefault());</span>
+<span class="nc" id="L160">        applyFilters(today.get(Calendar.YEAR), today.get(Calendar.MONTH), today.get(Calendar.DAY_OF_MONTH));</span>
+
+<span class="nc" id="L162">        fetchAppointments();</span>
+<span class="nc" id="L163">    }</span>
+
+    @Override protected void onResume() {
+<span class="nc" id="L166">        super.onResume();</span>
+<span class="nc" id="L167">        fetchAppointments();</span>
+<span class="nc" id="L168">    }</span>
+
+    private void fetchAppointments() {
+<span class="nc" id="L171">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET, URL_LIST_MY, null,
+                this::onData,
+                this::showVolleyError
+<span class="nc" id="L175">        ) {</span>
+            @Override public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L177">                Map&lt;String,String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L178">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L180">                return h;</span>
+            }
+        };
+<span class="nc" id="L183">        VolleySingleton.getInstance(this).addToRequestQueue(req);</span>
+<span class="nc" id="L184">    }</span>
+
+    private void onData(JSONArray arr) {
+<span class="nc" id="L187">        all.clear();</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L189">            JSONObject o = arr.optJSONObject(i);</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (o != null) all.add(Appointment.from(o));</span>
+        }
+<span class="nc" id="L192">        applyFilters();</span>
+<span class="nc" id="L193">    }</span>
+
+    private String jwtUsername() {
+        try {
+<span class="nc" id="L197">            String t = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (t == null) return &quot;&quot;;</span>
+<span class="nc" id="L199">            String[] parts = t.split(&quot;\\.&quot;);</span>
+<span class="nc" id="L200">            String payload = new String(Base64.decode(parts[1], Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING));</span>
+<span class="nc" id="L201">            JSONObject p = new JSONObject(payload);</span>
+<span class="nc" id="L202">            return p.optString(&quot;preferred_username&quot;,</span>
+<span class="nc" id="L203">                    p.optString(&quot;username&quot;,</span>
+<span class="nc" id="L204">                            p.optString(&quot;sub&quot;, &quot;&quot;)));</span>
+<span class="nc" id="L205">        } catch (Exception e) { return &quot;&quot;; }</span>
+    }
+
+    private boolean jwtHasRoleDoctor() {
+        try {
+<span class="nc" id="L210">            String t = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            if (t == null) return false;</span>
+<span class="nc" id="L212">            String[] parts = t.split(&quot;\\.&quot;);</span>
+<span class="nc" id="L213">            String payload = new String(Base64.decode(parts[1], Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING));</span>
+<span class="nc" id="L214">            JSONObject p = new JSONObject(payload);</span>
+<span class="nc" id="L215">            String rolesStr = p.optString(&quot;roles&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            if (rolesStr.isEmpty()) {</span>
+<span class="nc" id="L217">                JSONArray arr = p.optJSONArray(&quot;roles&quot;);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                if (arr != null) rolesStr = arr.toString();</span>
+            }
+<span class="nc" id="L220">            return rolesStr.toUpperCase(Locale.US).contains(&quot;DOCTOR&quot;);</span>
+<span class="nc" id="L221">        } catch (Exception e) { return false; }</span>
+    }
+
+    private void applyFilters() {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        String query = etSearch.getText() == null ? &quot;&quot; : etSearch.getText().toString().trim().toLowerCase(Locale.US);</span>
+<span class="nc" id="L226">        boolean iAmDoctor = jwtHasRoleDoctor();</span>
+
+<span class="nc" id="L228">        filtered.clear();</span>
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        for (Appointment a : all) {</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            boolean nameOK = iAmDoctor</span>
+<span class="nc bnc" id="L232" title="All 6 branches missed.">                    ? (query.isEmpty() || (a.patientName != null &amp;&amp; a.patientName.toLowerCase(Locale.US).contains(query)))</span>
+<span class="nc" id="L233">                    : true;</span>
+
+<span class="nc bnc" id="L235" title="All 6 branches missed.">            boolean dayOK = (dayStartMs == null) || (a.startMs &gt;= dayStartMs &amp;&amp; a.startMs &lt; dayEndMs);</span>
+
+<span class="nc bnc" id="L237" title="All 4 branches missed.">            if (nameOK &amp;&amp; dayOK) filtered.add(a);</span>
+<span class="nc" id="L238">        }</span>
+
+<span class="nc" id="L240">        adapter.notifyDataSetChanged();</span>
+
+<span class="nc" id="L242">        boolean empty = filtered.isEmpty();</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">        rv.setVisibility(empty ? View.GONE : View.VISIBLE);</span>
+<span class="nc" id="L245">    }</span>
+
+
+    private void applyFilters(int y, int m, int d) {
+<span class="nc" id="L249">        Calendar c = Calendar.getInstance(TimeZone.getDefault());</span>
+<span class="nc" id="L250">        c.set(y, m, d, 0, 0, 0);</span>
+<span class="nc" id="L251">        c.set(Calendar.MILLISECOND, 0);</span>
+<span class="nc" id="L252">        dayStartMs = c.getTimeInMillis();</span>
+<span class="nc" id="L253">        dayEndMs   = dayStartMs + 24L * 60L * 60L * 1000L;</span>
+<span class="nc" id="L254">        applyFilters();</span>
+<span class="nc" id="L255">    }</span>
+
+    private void showCreateDialog() {
+<span class="nc" id="L258">        int pad = (int) (16 * getResources().getDisplayMetrics().density);</span>
+<span class="nc" id="L259">        android.view.ContextThemeWrapper themed =</span>
+                new android.view.ContextThemeWrapper(this, R.style.ThemeOverlay_SaintCys_Pickers);
+
+<span class="nc" id="L262">        LinearLayout form = new LinearLayout(this);</span>
+<span class="nc" id="L263">        form.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L264">        form.setPadding(pad, pad, pad, pad);</span>
+
+<span class="nc" id="L266">        EditText etDoctor = new EditText(this); etDoctor.setHint(&quot;Doctor username&quot;);</span>
+<span class="nc" id="L267">        EditText etPatient = new EditText(this); etPatient.setHint(&quot;Patient username&quot;);</span>
+<span class="nc" id="L268">        EditText etEmail  = new EditText(this);  etEmail.setHint(&quot;Patient email (optional)&quot;);</span>
+<span class="nc" id="L269">        EditText etPhone  = new EditText(this);  etPhone.setHint(&quot;Patient phone (optional)&quot;);</span>
+<span class="nc" id="L270">        EditText etNotes  = new EditText(this);  etNotes.setHint(&quot;Type / notes&quot;);</span>
+
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (jwtHasRoleDoctor()) etDoctor.setText(jwtUsername()); else etPatient.setText(jwtUsername());</span>
+
+<span class="nc" id="L274">        TextView tvDateHdr = new TextView(this); tvDateHdr.setText(&quot;Pick date&quot;);</span>
+<span class="nc" id="L275">        DatePicker dp = new DatePicker(themed);</span>
+
+<span class="nc" id="L277">        TextView tvTimeHdr = new TextView(this); tvTimeHdr.setText(&quot;Set time&quot;);</span>
+<span class="nc" id="L278">        LinearLayout timeRow = new LinearLayout(this);</span>
+<span class="nc" id="L279">        timeRow.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L280">        timeRow.setPadding(0, pad, 0, 0);</span>
+
+<span class="nc" id="L282">        EditText etHour = new EditText(this); etHour.setHint(&quot;hh&quot;);</span>
+<span class="nc" id="L283">        etHour.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); etHour.setEms(2);</span>
+<span class="nc" id="L284">        TextView colon = new TextView(this); colon.setText(&quot; : &quot;);</span>
+<span class="nc" id="L285">        EditText etMin  = new EditText(this); etMin.setHint(&quot;mm&quot;);</span>
+<span class="nc" id="L286">        etMin.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); etMin.setEms(2);</span>
+<span class="nc" id="L287">        android.widget.Spinner spAmPm = new android.widget.Spinner(this);</span>
+<span class="nc" id="L288">        spAmPm.setAdapter(new android.widget.ArrayAdapter&lt;&gt;(this, android.R.layout.simple_spinner_dropdown_item, new String[]{&quot;AM&quot;,&quot;PM&quot;}));</span>
+
+<span class="nc" id="L290">        timeRow.addView(etHour); timeRow.addView(colon); timeRow.addView(etMin); timeRow.addView(spAmPm);</span>
+
+<span class="nc" id="L292">        form.addView(etDoctor); form.addView(etPatient); form.addView(etEmail); form.addView(etPhone); form.addView(etNotes);</span>
+<span class="nc" id="L293">        form.addView(tvDateHdr); form.addView(dp); form.addView(tvTimeHdr); form.addView(timeRow);</span>
+
+<span class="nc" id="L295">        android.widget.ScrollView scroll = new android.widget.ScrollView(this);</span>
+<span class="nc" id="L296">        scroll.addView(form);</span>
+
+<span class="nc" id="L298">        AlertDialog dialog = new AlertDialog.Builder(this)</span>
+<span class="nc" id="L299">                .setView(scroll)</span>
+<span class="nc" id="L300">                .setPositiveButton(&quot;Create&quot;, null)</span>
+<span class="nc" id="L301">                .setNegativeButton(&quot;Cancel&quot;, (d, w) -&gt; d.dismiss())</span>
+<span class="nc" id="L302">                .create();</span>
+
+<span class="nc" id="L304">        LinearLayout titleBar = new LinearLayout(this);</span>
+<span class="nc" id="L305">        titleBar.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L306">        titleBar.setPadding(pad, pad, pad, pad);</span>
+<span class="nc" id="L307">        TextView tvTitle = new TextView(this);</span>
+<span class="nc" id="L308">        tvTitle.setText(&quot;Create Appointment&quot;);</span>
+<span class="nc" id="L309">        tvTitle.setTextSize(18);</span>
+<span class="nc" id="L310">        tvTitle.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));</span>
+<span class="nc" id="L311">        android.widget.ImageButton btnClose = new android.widget.ImageButton(this);</span>
+<span class="nc" id="L312">        btnClose.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);</span>
+<span class="nc" id="L313">        btnClose.setBackground(null);</span>
+<span class="nc" id="L314">        btnClose.setOnClickListener(v -&gt; dialog.dismiss());</span>
+<span class="nc" id="L315">        titleBar.addView(tvTitle); titleBar.addView(btnClose);</span>
+<span class="nc" id="L316">        dialog.setCustomTitle(titleBar);</span>
+
+<span class="nc" id="L318">        dialog.setCanceledOnTouchOutside(true);</span>
+<span class="nc" id="L319">        dialog.show();</span>
+
+<span class="nc" id="L321">        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);</span>
+<span class="nc" id="L322">        Runnable validate = () -&gt; {</span>
+<span class="nc" id="L323">            String h = etHour.getText().toString().trim(), m = etMin.getText().toString().trim();</span>
+<span class="nc bnc" id="L324" title="All 4 branches missed.">            boolean okUsers = !etDoctor.getText().toString().trim().isEmpty() &amp;&amp; !etPatient.getText().toString().trim().isEmpty();</span>
+<span class="nc bnc" id="L325" title="All 4 branches missed.">            boolean okTime = h.matches(&quot;\\d{1,2}&quot;) &amp;&amp; m.matches(&quot;\\d{1,2}&quot;);</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if (okTime) {</span>
+<span class="nc" id="L327">                int ih = Integer.parseInt(h), im = Integer.parseInt(m);</span>
+<span class="nc bnc" id="L328" title="All 8 branches missed.">                okTime = ih &gt;= 1 &amp;&amp; ih &lt;= 12 &amp;&amp; im &gt;= 0 &amp;&amp; im &lt;= 59;</span>
+            }
+<span class="nc bnc" id="L330" title="All 4 branches missed.">            positive.setEnabled(okUsers &amp;&amp; okTime);</span>
+<span class="nc" id="L331">        };</span>
+<span class="nc" id="L332">        TextWatcher tw = simpleWatcher(validate);</span>
+<span class="nc" id="L333">        etDoctor.addTextChangedListener(tw); etPatient.addTextChangedListener(tw);</span>
+<span class="nc" id="L334">        etHour.addTextChangedListener(tw);   etMin.addTextChangedListener(tw);</span>
+<span class="nc" id="L335">        validate.run();</span>
+
+<span class="nc" id="L337">        positive.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L338">            int y = dp.getYear(), m = dp.getMonth() + 1, d = dp.getDayOfMonth();</span>
+<span class="nc" id="L339">            int h12 = Integer.parseInt(etHour.getText().toString().trim());</span>
+<span class="nc" id="L340">            int mm = Integer.parseInt(etMin.getText().toString().trim());</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            boolean pm = spAmPm.getSelectedItemPosition() == 1;</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">            int hh24 = (h12 % 12) + (pm ? 12 : 0);</span>
+
+<span class="nc" id="L344">            JSONObject body = new JSONObject();</span>
+            try {
+<span class="nc" id="L346">                body.put(&quot;doctorUsername&quot;, etDoctor.getText().toString().trim());</span>
+<span class="nc" id="L347">                body.put(&quot;patientUsername&quot;, etPatient.getText().toString().trim());</span>
+<span class="nc" id="L348">                body.put(&quot;date&quot;, String.format(Locale.US, &quot;%04d-%02d-%02d&quot;, y, m, d));</span>
+<span class="nc" id="L349">                body.put(&quot;time&quot;, String.format(Locale.US, &quot;%02d:%02d:00&quot;, hh24, mm));</span>
+<span class="nc" id="L350">                body.put(&quot;notes&quot;, etNotes.getText().toString().trim());</span>
+<span class="nc" id="L351">                body.put(&quot;patientEmail&quot;, etEmail.getText().toString().trim());</span>
+<span class="nc" id="L352">                body.put(&quot;patientPhone&quot;, etPhone.getText().toString().trim());</span>
+<span class="nc" id="L353">            } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L355">            JsonObjectRequest req = new JsonObjectRequest(</span>
+                    Request.Method.POST, URL_CREATE, body,
+<span class="nc" id="L357">                    res -&gt; { Toast.makeText(this, &quot;Appointment created&quot;, Toast.LENGTH_SHORT).show(); dialog.dismiss(); fetchAppointments(); },</span>
+                    this::showVolleyError
+<span class="nc" id="L359">            ) {</span>
+                @Override public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L361">                    Map&lt;String,String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L362">                    String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">                    if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L364">                    h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L365">                    return h;</span>
+                }
+            };
+<span class="nc" id="L368">            VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L369">        });</span>
+<span class="nc" id="L370">    }</span>
+
+    private TextWatcher simpleWatcher(Runnable r) {
+<span class="nc" id="L373">        return new TextWatcher() {</span>
+<span class="nc" id="L374">            public void beforeTextChanged(CharSequence s,int a,int b,int c) {}</span>
+<span class="nc" id="L375">            public void onTextChanged(CharSequence s,int a,int b,int c) { r.run(); }</span>
+<span class="nc" id="L376">            public void afterTextChanged(Editable s) {}</span>
+        };
+    }
+
+    private void updateStatus(long id, String action) {
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        String url = action.equals(&quot;approve&quot;) ? String.format(Locale.US, URL_APPROVE_FMT, id)</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">                : action.equals(&quot;confirm&quot;) ? String.format(Locale.US, URL_CONFIRM_FMT, id)</span>
+<span class="nc" id="L383">                : String.format(Locale.US, URL_CANCEL_FMT, id);</span>
+
+<span class="nc" id="L385">        JsonObjectRequest req = new JsonObjectRequest(</span>
+                Request.Method.PUT, url, null,
+<span class="nc" id="L387">                res -&gt; { Toast.makeText(this, &quot;Updated&quot;, Toast.LENGTH_SHORT).show(); fetchAppointments(); },</span>
+                this::showVolleyError
+<span class="nc" id="L389">        ) {</span>
+            @Override public Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L391">                Map&lt;String,String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L392">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">                if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L394">                return h;</span>
+            }
+        };
+<span class="nc" id="L397">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L398">    }</span>
+
+    private void showVolleyError(com.android.volley.VolleyError err) {
+<span class="nc bnc" id="L401" title="All 2 branches missed.">        int code = (err.networkResponse != null) ? err.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L402">        String body = &quot;&quot;;</span>
+        try {
+<span class="nc bnc" id="L404" title="All 4 branches missed.">            if (err.networkResponse != null &amp;&amp; err.networkResponse.data != null) {</span>
+<span class="nc" id="L405">                body = new String(err.networkResponse.data, StandardCharsets.UTF_8);</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">            } else if (err.getMessage() != null) {</span>
+<span class="nc" id="L407">                body = err.getMessage();</span>
+            }
+<span class="nc" id="L409">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L410">        android.util.Log.e(&quot;APPTS&quot;, &quot;HTTP &quot; + code + &quot; &quot; + body, err);</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        Toast.makeText(this, &quot;Error &quot; + code + (body.isEmpty() ? &quot;&quot; : &quot;: &quot; + body), Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L412">    }</span>
+
+    static class Adapter extends RecyclerView.Adapter&lt;Adapter.VH&gt; {
+        interface Action { void onAction(long id, String action); }
+        interface BoolProvider { boolean get(); }
+
+        private final List&lt;Appointment&gt; data;
+        private final BoolProvider isDoctor;
+        private final Action actionCall;
+
+<span class="nc" id="L422">        Adapter(List&lt;Appointment&gt; data, BoolProvider isDoctor, Action action) {</span>
+<span class="nc" id="L423">            this.data = data; this.isDoctor = isDoctor; this.actionCall = action;</span>
+<span class="nc" id="L424">        }</span>
+
+        @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup p, int vt) {
+<span class="nc" id="L427">            View v = LayoutInflater.from(p.getContext()).inflate(R.layout.item_appointments, p, false);</span>
+<span class="nc" id="L428">            return new VH(v);</span>
+        }
+
+        @Override public void onBindViewHolder(@NonNull VH h, int pos) {
+<span class="nc" id="L432">            Appointment a = data.get(pos);</span>
+
+<span class="nc" id="L434">            h.name.setText(a.patientName);</span>
+<span class="nc" id="L435">            h.email.setText(a.email);</span>
+<span class="nc" id="L436">            h.phone.setText(a.phone);</span>
+<span class="nc" id="L437">            h.type.setText(a.type);</span>
+<span class="nc" id="L438">            h.status.setText(a.status.toUpperCase(Locale.US));</span>
+
+<span class="nc" id="L440">            String date = DateFormat.format(&quot;MMM dd, yyyy&quot;, a.startMs).toString();</span>
+<span class="nc" id="L441">            String time = DateFormat.format(&quot;h:mm a&quot;, a.startMs).toString();</span>
+<span class="nc" id="L442">            h.date.setText(date);</span>
+<span class="nc" id="L443">            h.time.setText(time);</span>
+
+<span class="nc" id="L445">            View.OnClickListener openDetails = v -&gt; {</span>
+<span class="nc" id="L446">                Intent i = new Intent(v.getContext(), AppointmentDetailsActivity.class);</span>
+<span class="nc" id="L447">                i.putExtra(&quot;patientName&quot;, a.patientName);</span>
+<span class="nc" id="L448">                i.putExtra(&quot;patientEmail&quot;, a.email);</span>
+<span class="nc" id="L449">                i.putExtra(&quot;patientPhone&quot;, a.phone);</span>
+<span class="nc" id="L450">                i.putExtra(&quot;name&quot;, a.patientName);</span>
+<span class="nc" id="L451">                i.putExtra(&quot;email&quot;, a.email);</span>
+<span class="nc" id="L452">                i.putExtra(&quot;phone&quot;, a.phone);</span>
+<span class="nc" id="L453">                i.putExtra(&quot;type&quot;, a.type);</span>
+<span class="nc" id="L454">                i.putExtra(&quot;status&quot;, a.status);</span>
+<span class="nc" id="L455">                i.putExtra(&quot;startEpochMillis&quot;, a.startMs);</span>
+<span class="nc" id="L456">                v.getContext().startActivity(i);</span>
+<span class="nc" id="L457">            };</span>
+<span class="nc" id="L458">            h.itemView.setOnClickListener(openDetails);</span>
+
+<span class="nc bnc" id="L460" title="All 2 branches missed.">            h.btn.setText(isDoctor.get() ? &quot;Actions&quot; : &quot;Respond&quot;);</span>
+<span class="nc" id="L461">            h.btn.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L462">                PopupMenu pm = new PopupMenu(v.getContext(), v);</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">                if (isDoctor.get()) {</span>
+<span class="nc" id="L464">                    pm.getMenu().add(&quot;Approve&quot;);</span>
+<span class="nc" id="L465">                    pm.getMenu().add(&quot;Confirm&quot;);</span>
+<span class="nc" id="L466">                    pm.getMenu().add(&quot;Cancel&quot;);</span>
+                } else {
+<span class="nc" id="L468">                    pm.getMenu().add(&quot;Confirm&quot;);</span>
+<span class="nc" id="L469">                    pm.getMenu().add(&quot;Cancel&quot;);</span>
+                }
+<span class="nc" id="L471">                pm.setOnMenuItemClickListener(mi -&gt; {</span>
+<span class="nc" id="L472">                    String t = mi.getTitle().toString().toLowerCase(Locale.US);</span>
+                    try {
+<span class="nc" id="L474">                        long id = Long.parseLong(a.id);</span>
+<span class="nc" id="L475">                        actionCall.onAction(id, t);</span>
+<span class="nc" id="L476">                    } catch (NumberFormatException ignored) {}</span>
+<span class="nc" id="L477">                    return true;</span>
+                });
+<span class="nc" id="L479">                pm.show();</span>
+<span class="nc" id="L480">            });</span>
+
+<span class="nc" id="L482">            h.itemView.setOnLongClickListener(null);</span>
+<span class="nc" id="L483">        }</span>
+
+<span class="nc" id="L485">        @Override public int getItemCount() { return data.size(); }</span>
+
+        static class VH extends RecyclerView.ViewHolder {
+            TextView name, email, phone, date, time, type, status;
+            Button btn;
+            VH(@NonNull View v) {
+<span class="nc" id="L491">                super(v);</span>
+<span class="nc" id="L492">                name = v.findViewById(R.id.tvName);</span>
+<span class="nc" id="L493">                email = v.findViewById(R.id.tvEmail);</span>
+<span class="nc" id="L494">                phone = v.findViewById(R.id.tvPhone);</span>
+<span class="nc" id="L495">                date = v.findViewById(R.id.tvDate);</span>
+<span class="nc" id="L496">                time = v.findViewById(R.id.tvTime);</span>
+<span class="nc" id="L497">                type = v.findViewById(R.id.tvType);</span>
+<span class="nc" id="L498">                status = v.findViewById(R.id.tvStatus);</span>
+<span class="nc" id="L499">                btn = v.findViewById(R.id.btnDetails);</span>
+<span class="nc" id="L500">            }</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HistoriesActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">HistoriesActivity.java</span></div><h1>HistoriesActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.core.view.ViewCompat;
+
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+<span class="nc" id="L32">public class HistoriesActivity extends BaseActivity {</span>
+
+    private ArrayAdapter&lt;Patient&gt; adapter;
+<span class="nc" id="L35">    private final List&lt;Patient&gt; data = new ArrayList&lt;&gt;();</span>
+
+    private static final String BASE_API = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev&quot;;
+    private static final String URL_PATIENTS = BASE_API + &quot;/patients&quot;;
+    private static final String URL_ADDITIONAL = BASE_API + &quot;/patients/&quot;;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L44">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L45">        setContentView(R.layout.activity_histories);</span>
+<span class="nc" id="L46">        setupBottomNav(0);</span>
+
+<span class="nc" id="L48">        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);</span>
+
+<span class="nc" id="L50">        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -&gt; {</span>
+<span class="nc" id="L51">            int left = view.getPaddingLeft();</span>
+<span class="nc" id="L52">            int top = view.getPaddingTop();</span>
+<span class="nc" id="L53">            int right = view.getPaddingRight();</span>
+
+<span class="nc" id="L55">            view.setPadding(left, top, right, 0);</span>
+<span class="nc" id="L56">            return insets;</span>
+        });
+
+<span class="nc" id="L59">        ListView list = findViewById(R.id.patientList);</span>
+<span class="nc" id="L60">        EditText search = findViewById(R.id.searchPatients);</span>
+
+<span class="nc" id="L62">        adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_list_item_1, data);</span>
+<span class="nc" id="L63">        list.setAdapter(adapter);</span>
+
+<span class="nc" id="L65">        search.addTextChangedListener(new TextWatcher() {</span>
+<span class="nc" id="L66">            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}</span>
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+<span class="nc" id="L68">                adapter.getFilter().filter(s);</span>
+<span class="nc" id="L69">            }</span>
+<span class="nc" id="L70">            @Override public void afterTextChanged(Editable s) {}</span>
+        });
+
+<span class="nc" id="L73">        fetchPatients();</span>
+
+<span class="nc" id="L75">        list.setOnItemClickListener((parent, view, position, id) -&gt; {</span>
+<span class="nc" id="L76">            Patient p = adapter.getItem(position);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (p != null) showPatientDialog(p);</span>
+<span class="nc" id="L78">        });</span>
+<span class="nc" id="L79">    }</span>
+
+    private Map&lt;String, String&gt; buildHeaders() {
+<span class="nc" id="L82">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L83">        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (access != null) h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+<span class="nc" id="L85">        h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L86">        h.put(&quot;Accept&quot;, &quot;application/json, text/plain, */*&quot;);</span>
+<span class="nc" id="L87">        return h;</span>
+    }
+
+    private void fetchPatients() {
+<span class="nc" id="L91">        JsonArrayRequest req = new JsonArrayRequest(</span>
+                Request.Method.GET, URL_PATIENTS, null,
+                (JSONArray resp) -&gt; {
+<span class="nc" id="L94">                    data.clear();</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    for (int i = 0; i &lt; resp.length(); i++) {</span>
+<span class="nc" id="L96">                        JSONObject o = resp.optJSONObject(i);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                        if (o == null) continue;</span>
+<span class="nc" id="L98">                        long id = o.optLong(&quot;id&quot;);</span>
+<span class="nc" id="L99">                        String name = o.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc" id="L100">                        String mrn = o.optString(&quot;mrn&quot;, &quot;&quot;);</span>
+<span class="nc" id="L101">                        String dob = o.optString(&quot;dob&quot;, &quot;&quot;);</span>
+<span class="nc" id="L102">                        String gender = o.optString(&quot;gender&quot;, &quot;&quot;);</span>
+<span class="nc" id="L103">                        data.add(new Patient(id, name, mrn, dob, gender));</span>
+                    }
+<span class="nc" id="L105">                    adapter.notifyDataSetChanged();</span>
+<span class="nc" id="L106">                },</span>
+<span class="nc" id="L107">                (VolleyError error) -&gt; handleVolleyAuthError(error, () -&gt; fetchPatients())</span>
+<span class="nc" id="L108">        ) {</span>
+            @Override
+            public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L111">                java.util.Map&lt;String, String&gt; h = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L112">                String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">                if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L114">                    h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);</span>
+                }
+<span class="nc" id="L116">                h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L117">                return h;</span>
+            }
+        };
+
+<span class="nc" id="L121">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L122">    }</span>
+
+    private void showPatientDialog(Patient p) {
+<span class="nc" id="L125">        TextView info = new TextView(this);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        String infoText = &quot;MRN: &quot; + (p.mrn != null ? p.mrn : &quot;—&quot;) +</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                &quot;\nDOB: &quot; + (p.dob != null ? p.dob : &quot;—&quot;) +</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                &quot;\nGender: &quot; + (p.gender != null ? p.gender : &quot;—&quot;);</span>
+<span class="nc" id="L129">        info.setText(infoText);</span>
+<span class="nc" id="L130">        info.setPadding(0, 0, 0, (int)(8 * getResources().getDisplayMetrics().density));</span>
+
+<span class="nc" id="L132">        final EditText etSymptoms = new EditText(this);</span>
+<span class="nc" id="L133">        etSymptoms.setHint(&quot;Symptoms (optional)&quot;);</span>
+
+<span class="nc" id="L135">        final EditText etMeds = new EditText(this);</span>
+<span class="nc" id="L136">        etMeds.setHint(&quot;Current Medications (optional)&quot;);</span>
+
+<span class="nc" id="L138">        LinearLayout layout = new LinearLayout(this);</span>
+<span class="nc" id="L139">        layout.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L140">        int pad = (int) (16 * getResources().getDisplayMetrics().density);</span>
+<span class="nc" id="L141">        layout.setPadding(pad, pad, pad, 0);</span>
+<span class="nc" id="L142">        layout.addView(info);</span>
+<span class="nc" id="L143">        layout.addView(etSymptoms);</span>
+<span class="nc" id="L144">        layout.addView(etMeds);</span>
+
+<span class="nc" id="L146">        new AlertDialog.Builder(this)</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                .setTitle(p.name != null ? p.name : &quot;Patient Details&quot;)</span>
+<span class="nc" id="L148">                .setView(layout)</span>
+<span class="nc" id="L149">                .setPositiveButton(&quot;Save&quot;, (d, which) -&gt; {</span>
+<span class="nc" id="L150">                    String symptoms = etSymptoms.getText().toString().trim();</span>
+<span class="nc" id="L151">                    String meds = etMeds.getText().toString().trim();</span>
+<span class="nc" id="L152">                    updateAdditional(p.id, symptoms, meds);</span>
+<span class="nc" id="L153">                })</span>
+<span class="nc" id="L154">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L155">                .show();</span>
+<span class="nc" id="L156">    }</span>
+
+    private void updateAdditional(long id, String symptoms, String medications) {
+<span class="nc" id="L159">        String url = URL_ADDITIONAL + id + &quot;/additional&quot;;</span>
+
+<span class="nc" id="L161">        org.json.JSONObject body = new org.json.JSONObject();</span>
+        try {
+<span class="nc" id="L163">            body.put(&quot;symptoms&quot;, symptoms);</span>
+<span class="nc" id="L164">            body.put(&quot;medications&quot;, medications);</span>
+<span class="nc" id="L165">        } catch (org.json.JSONException ignored) {}</span>
+
+<span class="nc" id="L167">        com.android.volley.toolbox.JsonObjectRequest req =</span>
+                new com.android.volley.toolbox.JsonObjectRequest(
+                        com.android.volley.Request.Method.PUT,
+                        url,
+                        body,
+                        resp -&gt; {
+<span class="nc" id="L173">                            Toast.makeText(getApplicationContext(), &quot;Updated&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L174">                        },</span>
+<span class="nc" id="L175">                        err -&gt; handleVolleyAuthError(err, () -&gt; updateAdditional(id, symptoms, medications))</span>
+<span class="nc" id="L176">                ) {</span>
+                    @Override
+                    public java.util.Map&lt;String, String&gt; getHeaders() {
+<span class="nc" id="L179">                        java.util.Map&lt;String, String&gt; h = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L180">                        String access = AuthManager.getAccessToken(getApplicationContext());</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">                        if (access != null &amp;&amp; !access.isEmpty()) {</span>
+<span class="nc" id="L182">                            h.put(&quot;Authorization&quot;, &quot;Bearer &quot; + access);  // secure with token</span>
+                        }
+<span class="nc" id="L184">                        h.put(&quot;Content-Type&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L185">                        h.put(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="nc" id="L186">                        return h;</span>
+                    }
+                };
+
+<span class="nc" id="L190">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L191">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SignupActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">SignupActivity.java</span></div><h1>SignupActivity.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.VolleyError;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONObject;
+import org.json.JSONException;
+
+<span class="fc" id="L22">public class SignupActivity extends BaseActivity {</span>
+
+    private EditText usernameEditText;  // define username edittext variable
+    private EditText emailEditText;         // define email edittext variable
+    private EditText passwordEditText;  // define password edittext variable
+    private EditText confirmEditText;   // define confirm edittext variable
+    private TextView loginLink;         // define login button variable
+    private Button signupButton;        // define signup button variable
+
+    private static final String URL_SIGNUP = &quot;https://gwenda-gentling-discomfortably.ngrok-free.dev/api/signup&quot;;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L36">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L37">        setContentView(R.layout.activity_signup);</span>
+
+        /* initialize UI elements */
+<span class="fc" id="L40">        usernameEditText = findViewById(R.id.signup_username_edt);  // link to username edtext in the Signup activity XML</span>
+<span class="fc" id="L41">        emailEditText = findViewById(R.id.signup_email_edt);    // link to email edText in the Signup activity XML</span>
+<span class="fc" id="L42">        passwordEditText = findViewById(R.id.signup_password_edt);  // link to password edtext in the Signup activity XML</span>
+<span class="fc" id="L43">        confirmEditText = findViewById(R.id.signup_password_confirm_edt);    // link to confirm edtext in the Signup activity XML</span>
+<span class="fc" id="L44">        loginLink = findViewById(R.id.signup_login_link);    // link to login button in the Signup activity XML</span>
+<span class="fc" id="L45">        signupButton = findViewById(R.id.signup_signup_btn);  // link to signup button in the Signup activity XML</span>
+
+        /* click listener on login button pressed */
+<span class="fc" id="L48">        loginLink.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+
+                /* when login button is pressed, use intent to switch to Login Activity */
+<span class="fc" id="L53">                Intent intent = new Intent(SignupActivity.this, LoginActivity.class);</span>
+<span class="fc" id="L54">                startActivity(intent);  // go to LoginActivity</span>
+<span class="fc" id="L55">            }</span>
+        });
+
+        /* click listener on signup button pressed */
+<span class="fc" id="L59">        signupButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+
+                /* grab strings from user inputs */
+<span class="fc" id="L64">                String username = usernameEditText.getText().toString();</span>
+<span class="fc" id="L65">                String email = emailEditText.getText().toString();</span>
+<span class="fc" id="L66">                String password = passwordEditText.getText().toString();</span>
+<span class="fc" id="L67">                String confirm = confirmEditText.getText().toString();</span>
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if (!password.equals(confirm)) {</span>
+<span class="fc" id="L70">                    Toast.makeText(getApplicationContext(), &quot;Passwords don't match&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L71">                    return;</span>
+                }
+
+<span class="nc bnc" id="L74" title="All 6 branches missed.">                if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {</span>
+<span class="nc" id="L75">                    Toast.makeText(getApplicationContext(), &quot;Fill all fields&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L76">                    return;</span>
+                }
+
+<span class="nc" id="L79">                signupButton.setEnabled(false);</span>
+
+<span class="nc" id="L81">                JSONObject body = new JSONObject();</span>
+                try {
+<span class="nc" id="L83">                    body.put(&quot;username&quot;, username);</span>
+<span class="nc" id="L84">                    body.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L85">                    body.put(&quot;password&quot;, password);</span>
+<span class="nc" id="L86">                } catch (JSONException e) {</span>
+<span class="nc" id="L87">                    signupButton.setEnabled(true);</span>
+<span class="nc" id="L88">                    Toast.makeText(getApplicationContext(), &quot;Failed to build request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L89">                    return;</span>
+<span class="nc" id="L90">                }</span>
+
+<span class="nc" id="L92">                JsonObjectRequest req = new JsonObjectRequest(</span>
+                        Request.Method.POST,
+                        URL_SIGNUP,
+                        body,
+                        response -&gt; {
+<span class="nc" id="L97">                            Intent i = new Intent(SignupActivity.this, LoginActivity.class);</span>
+<span class="nc" id="L98">                            Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L99">                            i.putExtra(&quot;USERNAME&quot;, username);</span>
+<span class="nc" id="L100">                            startActivity(i);</span>
+<span class="nc" id="L101">                        },</span>
+                        (VolleyError error) -&gt; {
+<span class="nc" id="L103">                            signupButton.setEnabled(true);</span>
+<span class="nc" id="L104">                            Toast.makeText(getApplicationContext(), &quot;Signup failed&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L105">                        }</span>
+                );
+
+<span class="nc" id="L108">                VolleySingleton.getInstance(getApplicationContext())</span>
+<span class="nc" id="L109">                        .addToRequestQueue(req);</span>
+<span class="nc" id="L110">            }</span>
+        });
+<span class="fc" id="L112">    }</span>
+    @Override
+    protected boolean requiresAuth() {
+<span class="fc" id="L115">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

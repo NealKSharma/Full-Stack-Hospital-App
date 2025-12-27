@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CartStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.project.saintcyshospital</a> &gt; <span class="el_source">CartStore.java</span></div><h1>CartStore.java</h1><pre class="source lang-java linenums">package com.project.saintcyshospital;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="fc" id="L14">public class CartStore {</span>
+    private static final String PREFS = &quot;cart_prefs&quot;;
+    private static final String KEY_CART = &quot;cart_json&quot;;
+    private Context appCtx;
+
+<span class="fc" id="L19">    private static final CartStore INSTANCE = new CartStore();</span>
+<span class="fc" id="L20">    public static CartStore get() { return INSTANCE; }</span>
+
+<span class="fc" id="L22">    private final Map&lt;String, CartItem&gt; map = new LinkedHashMap&lt;&gt;();</span>
+
+    public void add(Medicine m) {
+<span class="nc" id="L25">        CartItem ci = map.get(m.id);</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (ci == null) map.put(m.id, new CartItem(m, 1));</span>
+<span class="nc" id="L27">        else ci.qty += 1;</span>
+<span class="nc" id="L28">        save();</span>
+<span class="nc" id="L29">    }</span>
+
+    public void removeOne(String medicineId) {
+<span class="nc" id="L32">        CartItem ci = map.get(medicineId);</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (ci == null) return;</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (ci.qty &gt; 1) ci.qty -= 1;</span>
+<span class="nc" id="L35">        else map.remove(medicineId);</span>
+<span class="nc" id="L36">        save();</span>
+<span class="nc" id="L37">    }</span>
+
+    public List&lt;CartItem&gt; items() {
+<span class="nc" id="L40">        return new ArrayList&lt;&gt;(map.values());</span>
+    }
+
+    public int totalCents() {
+<span class="nc" id="L44">        int sum = 0;</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        for (CartItem ci : map.values()) sum += ci.medicine.priceCents * ci.qty;</span>
+<span class="nc" id="L46">        return sum;</span>
+    }
+
+    public void clear() {
+<span class="nc" id="L50">        map.clear();</span>
+<span class="nc" id="L51">        save();</span>
+<span class="nc" id="L52">    }</span>
+
+    public static class CartItem {
+        public final Medicine medicine;
+        public int qty;
+<span class="nc" id="L57">        public CartItem(Medicine m, int q) { this.medicine = m; this.qty = q; }</span>
+    }
+
+    public void init(Context context) {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (appCtx == null) {</span>
+<span class="fc" id="L62">            appCtx = context.getApplicationContext();</span>
+<span class="fc" id="L63">            load();</span>
+        }
+<span class="fc" id="L65">    }</span>
+
+    private void save() {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (appCtx == null) return;</span>
+        try {
+<span class="nc" id="L70">            JSONArray arr = new JSONArray();</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            for (CartItem ci : map.values()) {</span>
+<span class="nc" id="L72">                JSONObject o = new JSONObject();</span>
+<span class="nc" id="L73">                o.put(&quot;id&quot;, ci.medicine.id);</span>
+<span class="nc" id="L74">                o.put(&quot;name&quot;, ci.medicine.name);</span>
+<span class="nc" id="L75">                o.put(&quot;genericName&quot;, ci.medicine.genericName);</span>
+<span class="nc" id="L76">                o.put(&quot;dosage&quot;, ci.medicine.dosage);</span>
+<span class="nc" id="L77">                o.put(&quot;priceCents&quot;, ci.medicine.priceCents);</span>
+<span class="nc" id="L78">                o.put(&quot;imageUrl&quot;, ci.medicine.imageUrl);</span>
+<span class="nc" id="L79">                o.put(&quot;qty&quot;, ci.qty);</span>
+<span class="nc" id="L80">                arr.put(o);</span>
+<span class="nc" id="L81">            }</span>
+<span class="nc" id="L82">            SharedPreferences sp = appCtx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);</span>
+<span class="nc" id="L83">            sp.edit().putString(KEY_CART, arr.toString()).apply();</span>
+<span class="nc" id="L84">        } catch (JSONException ignored) {}</span>
+<span class="nc" id="L85">    }</span>
+
+    private void load() {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (appCtx == null) return;</span>
+<span class="fc" id="L89">        SharedPreferences sp = appCtx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);</span>
+<span class="fc" id="L90">        String json = sp.getString(KEY_CART, null);</span>
+<span class="fc" id="L91">        map.clear();</span>
+<span class="pc bpc" id="L92" title="3 of 4 branches missed.">        if (json == null || json.isEmpty()) return;</span>
+        try {
+<span class="nc" id="L94">            JSONArray arr = new JSONArray(json);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L96">                JSONObject o = arr.optJSONObject(i);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                if (o == null) continue;</span>
+<span class="nc" id="L98">                String id = o.optString(&quot;id&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                if (id.isEmpty()) continue;</span>
+<span class="nc" id="L100">                String name = o.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc" id="L101">                String genericName = o.optString(&quot;genericName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L102">                String dosage = o.optString(&quot;dosage&quot;, &quot;&quot;);</span>
+<span class="nc" id="L103">                int priceCents = o.optInt(&quot;priceCents&quot;, 0);</span>
+<span class="nc" id="L104">                String imageUrl = o.optString(&quot;imageUrl&quot;, null);</span>
+<span class="nc" id="L105">                int qty = o.optInt(&quot;qty&quot;, 1);</span>
+
+<span class="nc" id="L107">                Medicine m = new Medicine(id, name, genericName, dosage, priceCents, imageUrl);</span>
+<span class="nc" id="L108">                map.put(id, new CartItem(m, qty));</span>
+            }
+<span class="nc" id="L110">        } catch (JSONException ignored) {}</span>
+<span class="nc" id="L111">    }</span>
+
+    public int totalItems() {
+<span class="nc" id="L114">        int sum = 0;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        for (CartItem ci : map.values()) {</span>
+<span class="nc" id="L116">            sum += ci.qty;</span>
+<span class="nc" id="L117">        }</span>
+<span class="nc" id="L118">        return sum;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 8.13.0</div></body></html>

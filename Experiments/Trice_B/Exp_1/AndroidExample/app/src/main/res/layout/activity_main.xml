@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E91E63"
+    android:orientation="vertical"
+    android:padding="24dp"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/main_msg_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="100dp"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"
+        android:text="What's up?"
+        android:textColor="#60E041"
+        android:textColorLink="#8BC34A"
+        android:textSize="65dp"
+        android:textStyle="bold"></TextView>
+
+    <TextView
+        android:id="@+id/subtitle_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="I hate learning!"
+        android:textColor="#1B47C8"
+        android:textSize="25sp"
+        android:textStyle="italic" />
+
+</androidx.appcompat.widget.LinearLayoutCompat>
